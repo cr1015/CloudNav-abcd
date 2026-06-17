@@ -1090,7 +1090,7 @@ function App() {
       
       if (activeIndex !== -1 && overIndex !== -1) {
         // 重新排序当前分类的链接
-        const reorderedCategoryLinks = arrayMove(categoryLinks, activeIndex, overIndex);
+        const reorderedCategoryLinks = arrayMove<LinkItem>(categoryLinks, activeIndex, overIndex);
         
         // 更新所有链接的顺序
         const updatedLinks = links.map(link => {
@@ -1123,7 +1123,7 @@ function App() {
       
       if (activeIndex !== -1 && overIndex !== -1) {
         // 重新排序置顶链接
-        const reorderedPinnedLinks = arrayMove(pinnedLinksList, activeIndex, overIndex);
+        const reorderedPinnedLinks = arrayMove<LinkItem>(pinnedLinksList, activeIndex, overIndex);
         
         // 创建一个映射，存储每个置顶链接的新pinnedOrder
         const pinnedOrderMap = new Map<string, number>();
@@ -1830,7 +1830,9 @@ function App() {
   // 可拖拽链接卡片组件：
   // - 普通浏览：按住卡片可直接拖动排序（a 可点击跳转，PointerSensor distance 区分点击/拖拽）
   // - 置顶排序模式（isSortingPinned）：div 不跳转 + 绿色高亮（保留原有置顶排序交互）
-  const SortableLinkCard = ({ link }: { link: LinkItem }) => {
+  type SortableLinkCardProps = { link: LinkItem };
+
+  const SortableLinkCard: React.FC<SortableLinkCardProps> = ({ link }) => {
     const {
       attributes,
       listeners,
@@ -2876,7 +2878,7 @@ function App() {
                 </h2>
 
                 {Object.keys(otherCategoryResults).length > 0 ? (
-                  Object.entries(otherCategoryResults).map(([categoryId, links]) => {
+                  Object.entries(otherCategoryResults).map(([categoryId, links]: [string, LinkItem[]]) => {
                     const category = categories.find(c => c.id === categoryId);
                     if (!category) return null;
 

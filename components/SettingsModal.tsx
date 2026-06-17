@@ -208,9 +208,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const handleRefreshAllIcons = () => {
     if (!confirm(`确定要刷新全部 ${links.length} 个链接的图标吗？将重新获取高清网站图标（自定义图标不受影响）。`)) return;
 
+    // 缓存破坏参数：强制浏览器重新向 Google favicon 服务拉取，
+    // 否则新旧 URL 字符串一致，浏览器直接走缓存，视觉上不会有任何变化。
+    const cacheBuster = `_r=${Date.now()}`;
     let refreshedCount = 0;
     const refreshedLinks = links.map(l => {
-      // 跳过自定义图标（data: SVG），只刷新网站 favicon
+      // 跳过自定义图标（data: SVG/PNG），只刷新网站 favicon
       if (l.icon && l.icon.startsWith('data:')) return l;
       let domain = l.url;
       try {
@@ -220,10 +223,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         return l;
       }
       refreshedCount++;
-      return { ...l, icon: `https://t3.gstatic.cn/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&size=256&url=https://${domain}` };
+      return {
+        ...l,
+        icon: `https://t3.gstatic.cn/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&size=256&url=https://${domain}&${cacheBuster}`
+      };
     });
     onUpdateLinks(refreshedLinks);
-    alert(`已刷新 ${refreshedCount} 个链接的图标为高清版本`);
+    alert(`已刷新 ${refreshedCount} 个链接的图标（高清 size=256，已强制绕过缓存重新获取）。`);
   };
 
   const handleCopy = (text: string, key: string) => {
