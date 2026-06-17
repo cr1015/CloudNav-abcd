@@ -1815,6 +1815,15 @@ function App() {
   }, [links, selectedCategory, searchQuery, categories, unlockedCategoryIds]);
 
 
+  // 升级 favicon 图标到更高清尺寸（128 → 256），渲染时动态升级，无需改动已存储数据
+  const getHighResIcon = (icon?: string): string => {
+    if (!icon) return '';
+    if (icon.includes('gstatic') && /size=\d+/.test(icon)) {
+      return icon.replace(/size=\d+/, 'size=256');
+    }
+    return icon;
+  };
+
   // --- Render Components ---
 
   // 创建可排序的链接卡片组件
@@ -1847,42 +1856,41 @@ function App() {
             ? 'bg-green-20 dark:bg-green-900/30 border-green-200 dark:border-green-800' 
             : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
         } ${isDragging ? 'shadow-2xl scale-105' : ''} ${
-          isDetailedView 
-            ? 'flex flex-col rounded-2xl border shadow-sm p-4 min-h-[100px] hover:border-green-400 dark:hover:border-green-500' 
+          isDetailedView
+            ? 'flex items-center rounded-xl border shadow-sm p-3 hover:-translate-y-0.5 hover:border-green-400 dark:hover:border-green-500'
             : 'flex items-center rounded-xl border shadow-sm hover:border-green-300 dark:hover:border-green-600'
         }`}
         {...attributes}
         {...listeners}
       >
         {/* 链接内容 - 移除a标签，改为div防止点击跳转 */}
-        <div className={`flex flex-1 min-w-0 overflow-hidden ${
-          isDetailedView ? 'flex-col' : 'items-center gap-3'
-        }`}>
-          {/* 第一行：图标和标题水平排列 */}
-          <div className={`flex items-center gap-3 mb-2 ${
-            isDetailedView ? '' : 'w-full'
+        <div className="flex flex-1 min-w-0 overflow-hidden items-center gap-3">
+          {/* Icon - 高清大图标，贴合卡片 */}
+          <div className={`flex items-center justify-center shrink-0 overflow-hidden ${
+            isDetailedView
+              ? 'w-11 h-11 rounded-xl bg-slate-50 dark:bg-slate-700/50'
+              : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700'
           }`}>
-            {/* Icon */}
-            <div className={`text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm font-bold uppercase shrink-0 ${
-              isDetailedView ? 'w-8 h-8 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-800' : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700'
-            }`}>
-                {link.icon ? <img src={link.icon} alt="" className="w-5 h-5"/> : link.title.charAt(0)}
-            </div>
-            
-            {/* 标题 */}
-            <h3 className={`text-slate-900 dark:text-slate-100 truncate overflow-hidden text-ellipsis ${
-              isDetailedView ? 'text-base' : 'text-sm font-medium text-slate-800 dark:text-slate-200'
-            }`} title={link.title}>
-                {link.title}
-            </h3>
+            {link.icon ? (
+              <img src={getHighResIcon(link.icon)} alt="" className={`${isDetailedView ? 'w-7 h-7' : 'w-5 h-5'} object-contain`} />
+            ) : (
+              <span className={`font-bold uppercase text-blue-600 dark:text-blue-400 ${isDetailedView ? 'text-base' : 'text-sm'}`}>{link.title.charAt(0)}</span>
+            )}
           </div>
-          
-          {/* 第二行：描述文字 */}
-             {isDetailedView && link.description && (
-               <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-2">
-                 {link.description}
-               </p>
-             )}
+
+          {/* 标题与描述 */}
+          <div className="flex flex-col min-w-0 flex-1">
+            <h3 className={`truncate overflow-hidden text-ellipsis ${
+              isDetailedView ? 'text-sm font-semibold text-slate-900 dark:text-slate-100' : 'text-sm font-medium text-slate-800 dark:text-slate-200'
+            }`} title={link.title}>
+              {link.title}
+            </h3>
+            {isDetailedView && link.description && (
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                {link.description}
+              </p>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -1910,8 +1918,8 @@ function App() {
               ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800/50 hover:bg-amber-100 dark:hover:bg-amber-900/30'
               : 'bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-slate-200 dark:border-slate-700'
         } ${isBatchEditMode ? 'cursor-pointer' : ''} ${
-          isDetailedView 
-            ? 'flex flex-col rounded-2xl border shadow-sm p-4 min-h-[100px] hover:border-blue-400 dark:hover:border-blue-500' 
+          isDetailedView
+            ? 'flex items-center rounded-xl border shadow-sm p-3 hover:-translate-y-0.5 hover:border-blue-300 dark:hover:border-blue-600'
             : 'flex items-center justify-between rounded-xl border shadow-sm p-3 hover:border-blue-300 dark:hover:border-blue-600'
         }`}
         onClick={() => isBatchEditMode && toggleLinkSelection(link.id)}
@@ -1919,66 +1927,68 @@ function App() {
       >
         {/* 链接内容 - 在批量编辑模式下不使用a标签 */}
         {isBatchEditMode ? (
-          <div className={`flex flex-1 min-w-0 overflow-hidden h-full ${
-            isDetailedView ? 'flex-col' : 'items-center'
-          }`}>
-            {/* 第一行：图标和标题水平排列 */}
-            <div className={`flex items-center gap-3 w-full`}>
-              {/* Icon */}
-              <div className={`text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm font-bold uppercase shrink-0 ${
-                isDetailedView ? 'w-8 h-8 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-800' : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700'
-              }`}>
-                  {link.icon ? <img src={link.icon} alt="" className="w-5 h-5"/> : link.title.charAt(0)}
-              </div>
-              
-              {/* 标题 */}
-              <h3 className={`text-slate-900 dark:text-slate-100 truncate overflow-hidden text-ellipsis ${
-                isDetailedView ? 'text-base' : 'text-sm font-medium text-slate-800 dark:text-slate-200'
-              }`} title={link.title}>
-                  {link.title}
-              </h3>
+          <div className="flex flex-1 min-w-0 overflow-hidden h-full items-center gap-3">
+            {/* Icon - 高清大图标，贴合卡片 */}
+            <div className={`flex items-center justify-center shrink-0 overflow-hidden ${
+              isDetailedView
+                ? 'w-11 h-11 rounded-xl bg-slate-50 dark:bg-slate-700/50'
+                : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700'
+            }`}>
+              {link.icon ? (
+                <img src={getHighResIcon(link.icon)} alt="" className={`${isDetailedView ? 'w-7 h-7' : 'w-5 h-5'} object-contain`} />
+              ) : (
+                <span className={`font-bold uppercase text-blue-600 dark:text-blue-400 ${isDetailedView ? 'text-base' : 'text-sm'}`}>{link.title.charAt(0)}</span>
+              )}
             </div>
-            
-            {/* 第二行：描述文字 */}
-            {isDetailedView && link.description && (
-              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-2">
-                {link.description}
-              </p>
-            )}
+
+            {/* 标题与描述 */}
+            <div className="flex flex-col min-w-0 flex-1">
+              <h3 className={`truncate overflow-hidden text-ellipsis ${
+                isDetailedView ? 'text-sm font-semibold text-slate-900 dark:text-slate-100' : 'text-sm font-medium text-slate-800 dark:text-slate-200'
+              }`} title={link.title}>
+                {link.title}
+              </h3>
+              {isDetailedView && link.description && (
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                  {link.description}
+                </p>
+              )}
+            </div>
           </div>
         ) : (
           <a
             href={link.url}
             target="_blank"
             rel="noopener noreferrer"
-            className={`flex flex-1 min-w-0 overflow-hidden h-full ${
-              isDetailedView ? 'flex-col' : 'items-center'
-            }`}
+            className="flex flex-1 min-w-0 overflow-hidden h-full items-center gap-3"
             title={isDetailedView ? link.url : (link.description || link.url)} // 详情版视图只显示URL作为tooltip
           >
-            {/* 第一行：图标和标题水平排列 */}
-            <div className={`flex items-center gap-3 w-full`}>
-              {/* Icon */}
-              <div className={`text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm font-bold uppercase shrink-0 ${
-                isDetailedView ? 'w-8 h-8 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-800' : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700'
-              }`}>
-                  {link.icon ? <img src={link.icon} alt="" className="w-5 h-5"/> : link.title.charAt(0)}
-              </div>
-              
-              {/* 标题 */}
-                <h3 className={`text-slate-800 dark:text-slate-200 truncate whitespace-nowrap overflow-hidden text-ellipsis group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors ${
-                  isDetailedView ? 'text-base' : 'text-sm font-medium'
-                }`} title={link.title}>
-                    {link.title}
-                </h3>
+            {/* Icon - 高清大图标，贴合卡片 */}
+            <div className={`flex items-center justify-center shrink-0 overflow-hidden ${
+              isDetailedView
+                ? 'w-11 h-11 rounded-xl bg-slate-50 dark:bg-slate-700/50'
+                : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700'
+            }`}>
+              {link.icon ? (
+                <img src={getHighResIcon(link.icon)} alt="" className={`${isDetailedView ? 'w-7 h-7' : 'w-5 h-5'} object-contain`} />
+              ) : (
+                <span className={`font-bold uppercase text-blue-600 dark:text-blue-400 ${isDetailedView ? 'text-base' : 'text-sm'}`}>{link.title.charAt(0)}</span>
+              )}
             </div>
-            
-            {/* 第二行：描述文字 */}
+
+            {/* 标题与描述 */}
+            <div className="flex flex-col min-w-0 flex-1">
+              <h3 className={`truncate whitespace-nowrap overflow-hidden text-ellipsis group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors ${
+                isDetailedView ? 'text-sm font-semibold' : 'text-sm font-medium'
+              }`} title={link.title}>
+                {link.title}
+              </h3>
               {isDetailedView && link.description && (
-                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-2">
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
                   {link.description}
                 </p>
               )}
+            </div>
             {!isDetailedView && link.description && (
               <div className="tooltip-custom absolute left-0 -top-8 w-max max-w-[200px] bg-black text-white text-xs p-2 rounded opacity-0 invisible group-hover:visible group-hover:opacity-100 transition-all z-20 pointer-events-none truncate">
                 {link.description}
