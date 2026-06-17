@@ -205,6 +205,27 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     alert('所有链接描述已清空');
   };
 
+  const handleRefreshAllIcons = () => {
+    if (!confirm(`确定要刷新全部 ${links.length} 个链接的图标吗？将重新获取高清网站图标（自定义图标不受影响）。`)) return;
+
+    let refreshedCount = 0;
+    const refreshedLinks = links.map(l => {
+      // 跳过自定义图标（data: SVG），只刷新网站 favicon
+      if (l.icon && l.icon.startsWith('data:')) return l;
+      let domain = l.url;
+      try {
+        const u = new URL(l.url.startsWith('http') ? l.url : 'https://' + l.url);
+        domain = u.hostname;
+      } catch {
+        return l;
+      }
+      refreshedCount++;
+      return { ...l, icon: `https://t3.gstatic.cn/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&size=256&url=https://${domain}` };
+    });
+    onUpdateLinks(refreshedLinks);
+    alert(`已刷新 ${refreshedCount} 个链接的图标为高清版本`);
+  };
+
   const handleCopy = (text: string, key: string) => {
       navigator.clipboard.writeText(text);
       setCopiedStates(prev => ({ ...prev, [key]: true }));
@@ -1217,6 +1238,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                                         className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-2 rounded-lg transition-colors border border-red-200 dark:border-red-800"
                                     >
                                         <Trash2 size={16} /> 清空所有描述
+                                    </button>
+                                    <button
+                                        onClick={handleRefreshAllIcons}
+                                        className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-3 py-2 rounded-lg transition-colors border border-blue-200 dark:border-blue-800"
+                                    >
+                                        <RefreshCw size={16} /> 刷新所有图标
                                     </button>
                                 </div>
                             )}

@@ -1827,6 +1827,9 @@ function App() {
   // --- Render Components ---
 
   // 创建可排序的链接卡片组件
+  // 可拖拽链接卡片组件：
+  // - 普通浏览：按住卡片可直接拖动排序（a 可点击跳转，PointerSensor distance 区分点击/拖拽）
+  // - 置顶排序模式（isSortingPinned）：div 不跳转 + 绿色高亮（保留原有置顶排序交互）
   const SortableLinkCard = ({ link }: { link: LinkItem }) => {
     const {
       attributes,
@@ -1836,62 +1839,107 @@ function App() {
       transition,
       isDragging,
     } = useSortable({ id: link.id });
-    
-    // 根据视图模式决定卡片样式
+
     const isDetailedView = siteSettings.cardStyle === 'detailed';
-    
+    const isPinnedSort = isSortingPinned; // 置顶排序模式：div 不跳转、绿色高亮
+
+    // 未分配高亮（仅普通直接拖拽模式）
+    const isUnassignedHighlight = !isPinnedSort && selectedCategory !== 'all' &&
+      !categories.find(c => c.id === selectedCategory)?.parentId &&
+      link.categoryId === selectedCategory &&
+      categories.some(c => c.parentId === selectedCategory);
+
     const style = {
       transform: CSS.Transform.toString(transform),
       transition: isDragging ? 'none' : transition,
       opacity: isDragging ? 0.5 : 1,
-      zIndex: isDragging ? 1000 : 'auto',
+      zIndex: isDragging ? 1000 : 'auto' as const,
     };
+
+    // 卡片内容（图标 + 标题描述），置顶排序与普通直接拖拽共用
+    const cardContent = (
+      <>
+        {/* Icon - 高清大图标，贴合卡片 */}
+        <div className={`flex items-center justify-center shrink-0 overflow-hidden ${
+          isDetailedView
+            ? 'w-11 h-11 rounded-xl bg-slate-50 dark:bg-slate-700/50'
+            : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700'
+        }`}>
+          {link.icon ? (
+            <img src={getHighResIcon(link.icon)} alt="" className={`${isDetailedView ? 'w-7 h-7' : 'w-5 h-5'} object-contain`} />
+          ) : (
+            <span className={`font-bold uppercase text-blue-600 dark:text-blue-400 ${isDetailedView ? 'text-base' : 'text-sm'}`}>{link.title.charAt(0)}</span>
+          )}
+        </div>
+
+        {/* 标题与描述 */}
+        <div className="flex flex-col min-w-0 flex-1">
+          <h3 className={`truncate overflow-hidden text-ellipsis ${
+            isDetailedView ? 'text-sm font-semibold text-slate-900 dark:text-slate-100' : 'text-sm font-medium text-slate-800 dark:text-slate-200'
+          }`} title={link.title}>
+            {link.title}
+          </h3>
+          {isDetailedView && link.description && (
+            <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+              {link.description}
+            </p>
+          )}
+        </div>
+      </>
+    );
 
     return (
       <div
         ref={setNodeRef}
         style={style}
-        className={`group relative transition-all duration-200 cursor-grab active:cursor-grabbing min-w-0 max-w-full overflow-hidden hover:shadow-lg hover:shadow-green-100/50 dark:hover:shadow-green-900/20 ${
-          isSortingMode || isSortingPinned
-            ? 'bg-green-20 dark:bg-green-900/30 border-green-200 dark:border-green-800' 
-            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
-        } ${isDragging ? 'shadow-2xl scale-105' : ''} ${
+        className={`group relative transition-all duration-200 min-w-0 max-w-full overflow-hidden ${
+          isPinnedSort
+            ? 'bg-green-20 dark:bg-green-900/30 border-green-200 dark:border-green-800'
+            : isUnassignedHighlight
+              ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800/50 hover:bg-amber-100 dark:hover:bg-amber-900/30'
+              : 'bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-slate-200 dark:border-slate-700'
+        } ${isDragging ? 'shadow-2xl scale-105' : 'hover:shadow-lg hover:shadow-blue-100/50 dark:hover:shadow-blue-900/20'} active:cursor-grabbing ${
           isDetailedView
-            ? 'flex items-center rounded-xl border shadow-sm p-3 hover:-translate-y-0.5 hover:border-green-400 dark:hover:border-green-500'
-            : 'flex items-center rounded-xl border shadow-sm hover:border-green-300 dark:hover:border-green-600'
+            ? 'flex items-center rounded-xl border shadow-sm p-3 hover:-translate-y-0.5 hover:border-blue-300 dark:hover:border-blue-600'
+            : 'flex items-center rounded-xl border shadow-sm p-3 hover:border-blue-300 dark:hover:border-blue-600'
         }`}
+        onContextMenu={!isPinnedSort ? (e) => handleContextMenu(e, link) : undefined}
         {...attributes}
         {...listeners}
       >
-        {/* 链接内容 - 移除a标签，改为div防止点击跳转 */}
-        <div className="flex flex-1 min-w-0 overflow-hidden items-center gap-3">
-          {/* Icon - 高清大图标，贴合卡片 */}
-          <div className={`flex items-center justify-center shrink-0 overflow-hidden ${
-            isDetailedView
-              ? 'w-11 h-11 rounded-xl bg-slate-50 dark:bg-slate-700/50'
-              : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700'
-          }`}>
-            {link.icon ? (
-              <img src={getHighResIcon(link.icon)} alt="" className={`${isDetailedView ? 'w-7 h-7' : 'w-5 h-5'} object-contain`} />
-            ) : (
-              <span className={`font-bold uppercase text-blue-600 dark:text-blue-400 ${isDetailedView ? 'text-base' : 'text-sm'}`}>{link.title.charAt(0)}</span>
-            )}
+        {isPinnedSort ? (
+          /* 置顶排序模式：div 防止点击跳转 */
+          <div className="flex flex-1 min-w-0 overflow-hidden items-center gap-3">
+            {cardContent}
           </div>
-
-          {/* 标题与描述 */}
-          <div className="flex flex-col min-w-0 flex-1">
-            <h3 className={`truncate overflow-hidden text-ellipsis ${
-              isDetailedView ? 'text-sm font-semibold text-slate-900 dark:text-slate-100' : 'text-sm font-medium text-slate-800 dark:text-slate-200'
-            }`} title={link.title}>
-              {link.title}
-            </h3>
-            {isDetailedView && link.description && (
-              <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                {link.description}
-              </p>
-            )}
-          </div>
-        </div>
+        ) : (
+          /* 普通直接拖拽：a 可点击跳转，按住拖动排序 */
+          <>
+            <a
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-1 min-w-0 overflow-hidden h-full items-center gap-3"
+              title={isDetailedView ? link.url : (link.description || link.url)}
+            >
+              {cardContent}
+            </a>
+            {/* Hover 编辑按钮 */}
+            <div className={`flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-blue-50 dark:bg-blue-900/20 backdrop-blur-sm rounded-md p-1 absolute ${
+              isDetailedView ? 'top-3 right-3' : 'top-1/2 -translate-y-1/2 right-2'
+            }`}>
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingLink(link); setIsModalOpen(true); }}
+                className="p-1 text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md"
+                title="编辑"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5a3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97c0-.33-.03-.65-.07-.97l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.08-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.32-.07.64-.07.97c0 .33.03.65.07.97l-2.11 1.63c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.39 1.06.73 1.69.98l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.25 1.17-.59 1.69-.98l2.49 1c.22.08.49 0 .61-.22l2-3.46c.13-.22.07-.49-.12-.64l-2.11-1.63Z" fill="currentColor"/>
+                </svg>
+              </button>
+            </div>
+          </>
+        )}
       </div>
     );
   };
@@ -2674,25 +2722,6 @@ function App() {
                          )}
                      </div>
                      {selectedCategory !== 'all' && !isCategoryLocked(selectedCategory) && (
-                         isSortingMode === selectedCategory ? (
-                             <div className="flex gap-2">
-                                 <button 
-                                     onClick={saveSorting}
-                                     className="flex items-center gap-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-full transition-colors"
-                                     title="保存顺序"
-                                 >
-                                     <Save size={14} />
-                                     <span>保存顺序</span>
-                                 </button>
-                                 <button 
-                                     onClick={cancelSorting}
-                                     className="px-3 py-1.5 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-medium rounded-full hover:bg-slate-300 dark:hover:bg-slate-600 transition-all"
-                                     title="取消排序"
-                                 >
-                                     取消
-                                 </button>
-                             </div>
-                         ) : (
                              <div className="flex gap-2">
                                  <button 
                                      onClick={toggleBatchEditMode}
@@ -2769,17 +2798,12 @@ function App() {
                                           </div>
                                      </>
                                  ) : (
-                                     <button 
-                                         onClick={() => startSorting(selectedCategory)}
-                                         className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-full transition-colors"
-                                         title="排序"
-                                     >
-                                         <GripVertical size={14} />
-                                         <span>排序</span>
-                                     </button>
+                                     <span className="hidden sm:flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500 select-none">
+                                         <GripVertical size={12} />
+                                         <span>拖动卡片排序</span>
+                                     </span>
                                  )}
                              </div>
-                         )
                      )}
                  </div>
 
@@ -2802,7 +2826,7 @@ function App() {
                         )}
                     </div>
                  ) : (
-                    isSortingMode === selectedCategory ? (
+                    !isBatchEditMode && !searchQuery.trim() && selectedCategory !== 'all' && !isCategoryLocked(selectedCategory) ? (
                         <DndContext
                             sensors={sensors}
                             collisionDetection={closestCorners}
