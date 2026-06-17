@@ -55,7 +55,7 @@ const callOpenAICompatible = async (config: AIConfig, systemPrompt: string, user
  */
 export const generateLinkDescription = async (title: string, url: string, config: AIConfig): Promise<string> => {
   if (!config.apiKey) {
-    return "请在设置中配置 API Key";
+    return "";
   }
 
   const prompt = `
@@ -69,24 +69,24 @@ export const generateLinkDescription = async (title: string, url: string, config
         const ai = new GoogleGenAI({ apiKey: config.apiKey });
         // Use user defined model or fallback
         const modelName = config.model || 'gemini-2.5-flash';
-        
+
         const response: GenerateContentResponse = await ai.models.generateContent({
             model: modelName,
             contents: `I have a website bookmark. ${prompt}`,
         });
-        return response.text ? response.text.trim() : "无法生成描述";
+        return response.text ? response.text.trim() : "";
     } else {
         // OpenAI Compatible
         const result = await callOpenAICompatible(
-            config, 
-            "You are a helpful assistant that summarizes website bookmarks.", 
+            config,
+            "You are a helpful assistant that summarizes website bookmarks.",
             prompt
         );
-        return result || "生成描述失败";
+        return result || "";
     }
   } catch (error) {
     console.error("AI generation error:", error);
-    return "生成描述失败";
+    return "";
   }
 };
 
