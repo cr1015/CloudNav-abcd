@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Save, Bot, Key, Globe, Sparkles, PauseCircle, Wrench, Box, Copy, Check, LayoutTemplate, RefreshCw, Info, Download, Sidebar, Keyboard, MousePointerClick, AlertTriangle, Package, Zap, Menu } from 'lucide-react';
+import { X, Save, Bot, Key, Globe, Sparkles, PauseCircle, Wrench, Box, Copy, Check, LayoutTemplate, RefreshCw, Info, Download, Sidebar, Keyboard, MousePointerClick, AlertTriangle, Package, Zap, Menu, Trash2 } from 'lucide-react';
 import { AIConfig, LinkItem, Category, SiteSettings } from '../types';
 import { generateLinkDescription } from '../services/geminiService';
 import JSZip from 'jszip';
@@ -195,6 +195,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     }
 
     setIsProcessing(false);
+  };
+
+  const handleClearAllDescriptions = () => {
+    if (!confirm(`确定要清空全部 ${links.length} 个链接的描述吗？此操作不可撤销。`)) return;
+
+    const clearedLinks = links.map(l => ({ ...l, description: '' }));
+    onUpdateLinks(clearedLinks);
+    alert('所有链接描述已清空');
   };
 
   const handleCopy = (text: string, key: string) => {
@@ -1196,12 +1204,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     </div>
                                 </div>
                             ) : (
-                                <button 
-                                    onClick={handleBulkGenerate}
-                                    className="flex items-center gap-2 text-sm text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 px-3 py-2 rounded-lg transition-colors border border-purple-200 dark:border-purple-800"
-                                >
-                                    <Sparkles size={16} /> 一键补全所有缺失的描述
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={handleBulkGenerate}
+                                        className="flex items-center gap-2 text-sm text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 px-3 py-2 rounded-lg transition-colors border border-purple-200 dark:border-purple-800"
+                                    >
+                                        <Sparkles size={16} /> 一键补全所有缺失的描述
+                                    </button>
+                                    <button
+                                        onClick={handleClearAllDescriptions}
+                                        className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-2 rounded-lg transition-colors border border-red-200 dark:border-red-800"
+                                    >
+                                        <Trash2 size={16} /> 清空所有描述
+                                    </button>
+                                </div>
                             )}
                         </div>
                     </div>
