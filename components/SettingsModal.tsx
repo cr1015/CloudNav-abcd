@@ -207,7 +207,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   const handleRefreshAllIcons = async () => {
-    // 跳过自定义图标（data:），其余全部通过书签 URL 重新抓取高清图标
+    // 跳过自定义图标（data:），其余全部刷新
     const toRefresh = links.filter(l => !(l.icon && l.icon.startsWith('data:')));
     if (toRefresh.length === 0) {
       alert('没有可刷新的图标（全部为自定义图标）。');
@@ -215,45 +215,72 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     }
     if (!confirm(
       `确定要刷新全部 ${toRefresh.length} 个书签的图标吗？\n\n` +
-      `将逐个访问书签站点，抓取最高清的图标（apple-touch-icon / 大尺寸 favicon / SVG）。\n` +
-      `自定义图标（data:）不受影响。\n` +
-      `过程中可能需要一点时间，请勿关闭窗口。`
+      `将逐个访问书签站点抓取最高清图标（apple-touch-icon / 大尺寸 favicon / SVG），\n` +
+      `抓取失败则回退到高清 favicon。所有图标都会强制绕过缓存重新加载。\n` +
+      `自定义图标（data:）不受影响。期间请勿关闭窗口。`
     )) return;
 
     setIsRefreshingIcons(true);
-    const iconMap = new Map<string, string>(); // linkId -> 新图标 URL
-    let okCount = 0;
-    let failCount = 0;
+    // 缓存破坏参数：确保 <img> 真正重新加载，否则新旧 URL 一致时浏览器走缓存 → 视觉无变化
+    const cacheBuster = `_r=${Date.now()}`;
+    const withBust = (u: string) => (u.includes('_r=') ? u : u + (u.includes('?') ? '&' : '?') + cacheBuster);
+    // gstatic 高清回退（本地 dev 无 /api/icon、或站点抓取失败时使用）
+    const gstaticHd = (rawUrl: string): string | null => {
+      try {
+        const u = new URL(rawUrl.startsWith('http') ? rawUrl : 'https://' + rawUrl);
+        return `https://t3.gstatic.cn/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&size=256&url=https://${u.hostname}`;
+      } catch {
+        return null;
+      }
+    };
 
-    // 并发抓取（限流 5 个，避免一次性打爆）
+    const iconMap = new Map<string, string>(); // linkId -> 新图标 URL
+    let hdCount = 0;        // 抓到站点真高清图标
+    let fallbackCount = 0;  // 走 gstatic 回退（含 /api/icon 不可用）
+    let failCount = 0;      // URL 无效，无法刷新
+
+    // 并发抓取（限流 5，避免一次性打爆）
     const concurrency = 5;
     let cursor = 0;
     const worker = async () => {
       while (cursor < toRefresh.length) {
         const l = toRefresh[cursor++];
+        let newIcon: string | null = null;
+        let isHD = false;
         try {
           const resp = await fetch(`/api/icon?url=${encodeURIComponent(l.url)}`);
-          const data = await resp.json();
-          if (data.icon) {
-            iconMap.set(l.id, data.icon);
-            okCount++;
-          } else {
-            failCount++;
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data && typeof data.icon === 'string' && data.icon) {
+              newIcon = data.icon;
+              isHD = data.source === 'site' || data.source === 'favicon-ico';
+            }
           }
         } catch {
+          // /api/icon 不可用（如本地 dev 未部署），走下方回退
+        }
+        if (!newIcon) newIcon = gstaticHd(l.url);
+        if (newIcon) {
+          iconMap.set(l.id, withBust(newIcon));
+          if (isHD) hdCount++; else fallbackCount++;
+        } else {
           failCount++;
         }
       }
     };
     await Promise.all(Array.from({ length: Math.min(concurrency, toRefresh.length) }, worker));
 
-    // 合并：抓取成功的更新图标，失败的保留原图标
     const refreshedLinks = links.map(l =>
       iconMap.has(l.id) ? { ...l, icon: iconMap.get(l.id) } : l
     );
     onUpdateLinks(refreshedLinks);
     setIsRefreshingIcons(false);
-    alert(`图标刷新完成。\n成功抓取高清图标：${okCount} 个\n失败（保留原图标）：${failCount} 个`);
+    alert(
+      `图标刷新完成（共 ${toRefresh.length} 个）：\n` +
+      `· 站点高清图标：${hdCount} 个\n` +
+      `· 高清 favicon 回退：${fallbackCount} 个\n` +
+      `· 无法刷新（URL 无效）：${failCount} 个`
+    );
   };
 
   const handleCopy = (text: string, key: string) => {
