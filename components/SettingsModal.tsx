@@ -536,22 +536,23 @@ function notify(title, message) {
         
         .cat-header .lock-icon { width: 14px; height: 14px; color: #f59e0b; margin-left: auto; }
 
-        .cat-links { display: none; padding-left: 8px; margin-bottom: 8px; }
-        .cat-header.active + .cat-links { display: block; }
+        .cat-links { display: none; padding: 4px; margin-bottom: 8px; }
+        .cat-header.active + .cat-links { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
         
-        .sub-cat-group { margin-top: 8px; margin-bottom: 4px; }
+        .sub-cat-group { margin-top: 8px; margin-bottom: 4px; grid-column: 1 / -1; }
         .sub-cat-title { 
             padding: 4px 8px; font-size: 11px; font-weight: 700; color: var(--muted); 
             text-transform: uppercase; letter-spacing: 0.05em; display: flex; items-center; gap: 4px;
         }
         .sub-cat-title::before { content: ""; width: 4px; height: 4px; background: var(--accent); border-radius: 50%; opacity: 0.5; }
+        .sub-cat-links { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 4px; }
 
-        .link-item { display: flex; items-center; gap: 8px; padding: 6px 8px; border-radius: 6px; text-decoration: none; color: var(--text); transition: background 0.1s; border-left: 2px solid transparent; }
-        .link-item:hover { background: var(--hover); border-left-color: var(--accent); }
-        .link-icon { width: 16px; height: 16px; flex-shrink: 0; display: flex; items-center; justify-content: center; overflow: hidden; }
+        .link-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px 8px; border-radius: 8px; text-decoration: none; color: var(--text); transition: background 0.15s; border: 1px solid var(--border); background: var(--bg); }
+        .link-item:hover { background: var(--hover); border-color: var(--accent); }
+        .link-icon { width: 22px; height: 22px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .link-icon img { width: 100%; height: 100%; object-fit: contain; }
-        .link-info { min-width: 0; flex: 1; }
-        .link-title { font-size: 12px; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
+        .link-info { width: 100%; min-width: 0; }
+        .link-title { font-size: 11px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; text-align: center; max-width: 100%; }
         
         .empty { text-align: center; padding: 20px; color: var(--muted); font-size: 12px; }
         .loading { display: flex; justify-content: center; padding: 40px; color: var(--accent); font-size: 12px; }
@@ -832,17 +833,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <span>\${sub.name}</span>
                             \${isSubLocked ? '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#f59e0b;"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>' : ''}
                         </div>
-                        \${isSubLocked ? '' : sub.links.map(link => {
+                        \${isSubLocked ? '' : '<div class="sub-cat-links">' + sub.links.map(link => {
                             const iconSrc = getFaviconUrl(link.url);
                             return \`
-                                <a href="\${link.url}" target="_blank" class="link-item" style="margin-left: 8px;">
+                                <a href="\${link.url}" target="_blank" class="link-item">
                                     <div class="link-icon"><img src="\${iconSrc}" /></div>
                                     <div class="link-info">
                                         <div class="link-title">\${link.title}</div>
                                     </div>
                                 </a>
                             \`;
-                        }).join('')}
+                        }).join('') + '</div>'}
                     </div>
                 \`;
             });
