@@ -931,6 +931,11 @@ function App() {
 
   // 分类操作密码验证处理函数
   const handleCategoryActionAuth = async (password: string): Promise<boolean> => {
+    // 如果用户已登录（authToken存在），直接信任，无需重复验证密码
+    if (authToken) {
+      return true;
+    }
+
     try {
       // 验证密码
       const authResponse = await fetch('/api/storage', {
@@ -941,7 +946,7 @@ function App() {
         },
         body: JSON.stringify({ authOnly: true })
       });
-      
+
       return authResponse.ok;
     } catch (error) {
       console.error('Category action auth error:', error);
@@ -2036,13 +2041,14 @@ function App() {
         onUnlock={handleUnlockCategory}
       />
 
-      <CategoryManagerModal 
-        isOpen={isCatManagerOpen} 
+      <CategoryManagerModal
+        isOpen={isCatManagerOpen}
         onClose={() => setIsCatManagerOpen(false)}
         categories={categories}
         onUpdateCategories={handleUpdateCategories}
         onDeleteCategory={handleDeleteCategory}
         onVerifyPassword={handleCategoryActionAuth}
+        isAuthenticated={!!authToken}
       />
 
       <BackupModal

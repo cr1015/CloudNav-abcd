@@ -170,32 +170,28 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         return;
     }
 
-    const missingLinks = links.filter(l => !l.description);
-    if (missingLinks.length === 0) {
-        alert("所有链接都已有描述！");
-        return;
-    }
-
-    if (!confirm(`发现 ${missingLinks.length} 个链接缺少描述，确定要使用 AI 自动生成吗？这可能需要一些时间。`)) return;
+    if (!confirm(`将使用 AI 为全部 ${links.length} 个链接生成/重新生成描述，这可能需要一些时间。确定继续吗？`)) return;
 
     setIsProcessing(true);
     shouldStopRef.current = false;
-    setProgress({ current: 0, total: missingLinks.length });
-    
+    setProgress({ current: 0, total: links.length });
+
     let currentLinks = [...links];
 
-    for (let i = 0; i < missingLinks.length; i++) {
+    for (let i = 0; i < links.length; i++) {
         if (shouldStopRef.current) break;
 
-        const link = missingLinks[i];
+        const link = links[i];
         try {
             const desc = await generateLinkDescription(link.title, link.url, localConfig);
             currentLinks = currentLinks.map(l => l.id === link.id ? { ...l, description: desc } : l);
-            onUpdateLinks(currentLinks);
-            setProgress({ current: i + 1, total: missingLinks.length });
         } catch (e) {
             console.error(`Failed to generate for ${link.title}`, e);
+            // 生成失败时清空描述
+            currentLinks = currentLinks.map(l => l.id === link.id ? { ...l, description: '' } : l);
         }
+        onUpdateLinks(currentLinks);
+        setProgress({ current: i + 1, total: links.length });
     }
 
     setIsProcessing(false);

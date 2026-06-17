@@ -13,15 +13,17 @@ interface CategoryManagerModalProps {
   onUpdateCategories: (newCategories: Category[]) => void;
   onDeleteCategory: (id: string, mode: 'migrate' | 'delete_all', targetId?: string) => void;
   onVerifyPassword?: (password: string) => Promise<boolean>;
+  isAuthenticated?: boolean; // 用户是否已通过密码登录
 }
 
-const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  categories, 
+const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
+  isOpen,
+  onClose,
+  categories,
   onUpdateCategories,
   onDeleteCategory,
-  onVerifyPassword
+  onVerifyPassword,
+  isAuthenticated
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
@@ -142,8 +144,8 @@ const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
 
   // 处理编辑分类前的验证
   const handleStartEdit = (cat: Category) => {
-    if (!onVerifyPassword) {
-      // 如果没有提供验证函数，直接编辑
+    // 如果用户已登录或没有提供验证函数，直接编辑
+    if (isAuthenticated || !onVerifyPassword) {
       startEdit(cat);
       return;
     }
@@ -154,15 +156,15 @@ const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
       categoryId: cat.id,
       categoryName: cat.name
     });
-    
+
     // 打开验证弹窗
     setIsAuthModalOpen(true);
   };
 
   // 处理删除分类前的验证
   const handleDeleteClick = (cat: Category) => {
-    if (!onVerifyPassword) {
-      // 如果没有提供验证函数，直接打开删除确认弹窗
+    // 如果用户已登录或没有提供验证函数，直接打开删除确认弹窗
+    if (isAuthenticated || !onVerifyPassword) {
       setDeletingCategory(cat);
       setIsDeleteModalOpen(true);
       return;
@@ -174,7 +176,7 @@ const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
       categoryId: cat.id,
       categoryName: cat.name
     });
-    
+
     // 打开验证弹窗
     setIsAuthModalOpen(true);
   };
