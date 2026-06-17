@@ -81,6 +81,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const [domain, setDomain] = useState('');
   const [browserType, setBrowserType] = useState<'chrome' | 'firefox'>('chrome');
   const [isZipping, setIsZipping] = useState(false);
+  const [isRefreshingIcons, setIsRefreshingIcons] = useState(false);
   
   const [copiedStates, setCopiedStates] = useState<{[key: string]: boolean}>({});
 
@@ -205,31 +206,54 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     alert('所有链接描述已清空');
   };
 
-  const handleRefreshAllIcons = () => {
-    if (!confirm(`确定要刷新全部 ${links.length} 个链接的图标吗？将重新获取高清网站图标（自定义图标不受影响）。`)) return;
+  const handleRefreshAllIcons = async () => {
+    // 跳过自定义图标（data:），其余全部通过书签 URL 重新抓取高清图标
+    const toRefresh = links.filter(l => !(l.icon && l.icon.startsWith('data:')));
+    if (toRefresh.length === 0) {
+      alert('没有可刷新的图标（全部为自定义图标）。');
+      return;
+    }
+    if (!confirm(
+      `确定要刷新全部 ${toRefresh.length} 个书签的图标吗？\n\n` +
+      `将逐个访问书签站点，抓取最高清的图标（apple-touch-icon / 大尺寸 favicon / SVG）。\n` +
+      `自定义图标（data:）不受影响。\n` +
+      `过程中可能需要一点时间，请勿关闭窗口。`
+    )) return;
 
-    // 缓存破坏参数：强制浏览器重新向 Google favicon 服务拉取，
-    // 否则新旧 URL 字符串一致，浏览器直接走缓存，视觉上不会有任何变化。
-    const cacheBuster = `_r=${Date.now()}`;
-    let refreshedCount = 0;
-    const refreshedLinks = links.map(l => {
-      // 跳过自定义图标（data: SVG/PNG），只刷新网站 favicon
-      if (l.icon && l.icon.startsWith('data:')) return l;
-      let domain = l.url;
-      try {
-        const u = new URL(l.url.startsWith('http') ? l.url : 'https://' + l.url);
-        domain = u.hostname;
-      } catch {
-        return l;
+    setIsRefreshingIcons(true);
+    const iconMap = new Map<string, string>(); // linkId -> 新图标 URL
+    let okCount = 0;
+    let failCount = 0;
+
+    // 并发抓取（限流 5 个，避免一次性打爆）
+    const concurrency = 5;
+    let cursor = 0;
+    const worker = async () => {
+      while (cursor < toRefresh.length) {
+        const l = toRefresh[cursor++];
+        try {
+          const resp = await fetch(`/api/icon?url=${encodeURIComponent(l.url)}`);
+          const data = await resp.json();
+          if (data.icon) {
+            iconMap.set(l.id, data.icon);
+            okCount++;
+          } else {
+            failCount++;
+          }
+        } catch {
+          failCount++;
+        }
       }
-      refreshedCount++;
-      return {
-        ...l,
-        icon: `https://t3.gstatic.cn/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&size=256&url=https://${domain}&${cacheBuster}`
-      };
-    });
+    };
+    await Promise.all(Array.from({ length: Math.min(concurrency, toRefresh.length) }, worker));
+
+    // 合并：抓取成功的更新图标，失败的保留原图标
+    const refreshedLinks = links.map(l =>
+      iconMap.has(l.id) ? { ...l, icon: iconMap.get(l.id) } : l
+    );
     onUpdateLinks(refreshedLinks);
-    alert(`已刷新 ${refreshedCount} 个链接的图标（高清 size=256，已强制绕过缓存重新获取）。`);
+    setIsRefreshingIcons(false);
+    alert(`图标刷新完成。\n成功抓取高清图标：${okCount} 个\n失败（保留原图标）：${failCount} 个`);
   };
 
   const handleCopy = (text: string, key: string) => {
@@ -1247,9 +1271,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     </button>
                                     <button
                                         onClick={handleRefreshAllIcons}
-                                        className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-3 py-2 rounded-lg transition-colors border border-blue-200 dark:border-blue-800"
+                                        disabled={isRefreshingIcons}
+                                        className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-3 py-2 rounded-lg transition-colors border border-blue-200 dark:border-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        <RefreshCw size={16} /> 刷新所有图标
+                                        <RefreshCw size={16} className={isRefreshingIcons ? 'animate-spin' : ''} />
+                                        {isRefreshingIcons ? '正在抓取高清图标…' : '刷新所有图标'}
                                     </button>
                                 </div>
                             )}
