@@ -551,7 +551,7 @@ function notify(title, message) {
         .link-icon { width: 16px; height: 16px; flex-shrink: 0; display: flex; items-center; justify-content: center; overflow: hidden; }
         .link-icon img { width: 100%; height: 100%; object-fit: contain; }
         .link-info { min-width: 0; flex: 1; }
-        .link-title { font-size: 13px; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
+        .link-title { font-size: 12px; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
         
         .empty { text-align: center; padding: 20px; color: var(--muted); font-size: 12px; }
         .loading { display: flex; justify-content: center; padding: 40px; color: var(--accent); font-size: 12px; }
