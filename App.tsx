@@ -26,6 +26,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { LinkItem, Category, DEFAULT_CATEGORIES, INITIAL_LINKS, WebDavConfig, AIConfig, SearchMode, ExternalSearchSource, SearchConfig } from './types';
 import { parseBookmarks } from './services/bookmarkParser';
+import { makeFallbackIcon } from './services/textIcon';
 import Icon from './components/Icon';
 import LinkModal from './components/LinkModal';
 import AuthModal from './components/AuthModal';
@@ -1824,6 +1825,10 @@ function App() {
     return icon;
   };
 
+  // 取得最终要渲染的图标：有图标用高清图标，无图标则用紫色标题兜底图标
+  const getEffectiveIcon = (link: LinkItem): string =>
+    (link.icon && getHighResIcon(link.icon)) || makeFallbackIcon(link.title);
+
   // --- Render Components ---
 
   // 创建可排序的链接卡片组件
@@ -1867,11 +1872,12 @@ function App() {
             ? 'w-11 h-11 rounded-xl bg-slate-50 dark:bg-slate-700/50'
             : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700'
         }`}>
-          {link.icon ? (
-            <img src={getHighResIcon(link.icon)} alt="" className={`${isDetailedView ? 'w-7 h-7' : 'w-5 h-5'} object-contain`} />
-          ) : (
-            <span className={`font-bold uppercase text-blue-600 dark:text-blue-400 ${isDetailedView ? 'text-base' : 'text-sm'}`}>{link.title.charAt(0)}</span>
-          )}
+          <img
+            src={getEffectiveIcon(link)}
+            alt=""
+            onError={(e) => { if (!e.currentTarget.src.startsWith('data:')) e.currentTarget.src = makeFallbackIcon(link.title); }}
+            className={`${isDetailedView ? 'w-7 h-7' : 'w-5 h-5'} object-contain`}
+          />
         </div>
 
         {/* 标题与描述 */}
@@ -1984,11 +1990,12 @@ function App() {
                 ? 'w-11 h-11 rounded-xl bg-slate-50 dark:bg-slate-700/50'
                 : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700'
             }`}>
-              {link.icon ? (
-                <img src={getHighResIcon(link.icon)} alt="" className={`${isDetailedView ? 'w-7 h-7' : 'w-5 h-5'} object-contain`} />
-              ) : (
-                <span className={`font-bold uppercase text-blue-600 dark:text-blue-400 ${isDetailedView ? 'text-base' : 'text-sm'}`}>{link.title.charAt(0)}</span>
-              )}
+              <img
+                src={getEffectiveIcon(link)}
+                alt=""
+                onError={(e) => { if (!e.currentTarget.src.startsWith('data:')) e.currentTarget.src = makeFallbackIcon(link.title); }}
+                className={`${isDetailedView ? 'w-7 h-7' : 'w-5 h-5'} object-contain`}
+              />
             </div>
 
             {/* 标题与描述 */}
@@ -2019,11 +2026,12 @@ function App() {
                 ? 'w-11 h-11 rounded-xl bg-slate-50 dark:bg-slate-700/50'
                 : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700'
             }`}>
-              {link.icon ? (
-                <img src={getHighResIcon(link.icon)} alt="" className={`${isDetailedView ? 'w-7 h-7' : 'w-5 h-5'} object-contain`} />
-              ) : (
-                <span className={`font-bold uppercase text-blue-600 dark:text-blue-400 ${isDetailedView ? 'text-base' : 'text-sm'}`}>{link.title.charAt(0)}</span>
-              )}
+              <img
+                src={getEffectiveIcon(link)}
+                alt=""
+                onError={(e) => { if (!e.currentTarget.src.startsWith('data:')) e.currentTarget.src = makeFallbackIcon(link.title); }}
+                className={`${isDetailedView ? 'w-7 h-7' : 'w-5 h-5'} object-contain`}
+              />
             </div>
 
             {/* 标题与描述 */}
