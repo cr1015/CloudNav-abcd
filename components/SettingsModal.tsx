@@ -207,17 +207,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   const handleRefreshAllIcons = async () => {
-    // 刷新全部书签（含从浏览器导入的低清 data: 图标），按 URL 重新抓取高清
-    const toRefresh = links.filter(l => l.url && l.url.trim());
+    // 刷新全部书签（含导入的低清 data: 图标），但保留自制的 SVG 文字图标
+    const toRefresh = links.filter(
+      l => l.url && l.url.trim() && !(l.icon && l.icon.startsWith('data:image/svg'))
+    );
     if (toRefresh.length === 0) {
-      alert('没有可刷新的书签。');
+      alert('没有可刷新的书签（其余均为自制图标）。');
       return;
     }
     if (!confirm(
       `确定要刷新全部 ${toRefresh.length} 个书签的图标吗？\n\n` +
       `将逐个访问书签站点抓取最高清图标（apple-touch-icon / 大尺寸 favicon / SVG），\n` +
-      `抓取失败则回退到高清 favicon。所有图标（含导入的低清图标）都会被替换并强制重新加载。\n` +
-      `期间请勿关闭窗口。`
+      `抓取失败则回退到高清 favicon。导入的低清图标会被替换并强制重新加载。\n` +
+      `自制文字图标（SVG）保留不刷新。期间请勿关闭窗口。`
     )) return;
 
     setIsRefreshingIcons(true);
