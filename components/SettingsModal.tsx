@@ -1226,8 +1226,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 onChange={(e) => handleChange('provider', e.target.value)}
                                 className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
                             >
-                                <option value="gemini">Google Gemini</option>
-                                <option value="openai">OpenAI Compatible (ChatGPT, DeepSeek, Claude...)</option>
+                                <option value="anthropic">Anthropic Claude</option>
+                                <option value="openai">OpenAI Compatible (ChatGPT, DeepSeek...)</option>
                             </select>
                         </div>
                         
@@ -1265,7 +1265,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 type="text" 
                                 value={localConfig.model}
                                 onChange={(e) => handleChange('model', e.target.value)}
-                                placeholder={localConfig.provider === 'gemini' ? "gemini-2.5-flash" : "gpt-3.5-turbo"}
+                                placeholder={localConfig.provider === 'anthropic' ? "claude-3-5-haiku-20241022" : "gpt-3.5-turbo"}
                                 className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>

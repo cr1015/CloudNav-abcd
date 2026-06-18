@@ -83,10 +83,10 @@ function App() {
           } catch (e) {}
       }
       return {
-          provider: 'gemini',
-          apiKey: process.env.API_KEY || '', 
+          provider: 'anthropic',
+          apiKey: '',
           baseUrl: '',
-          model: 'gemini-2.5-flash'
+          model: 'claude-3-5-haiku-20241022'
       };
   });
 
@@ -1870,7 +1870,7 @@ function App() {
         <div className={`flex items-center justify-center shrink-0 overflow-hidden ${
           isDetailedView
             ? 'w-11 h-11 rounded-xl bg-slate-50 dark:bg-slate-700/50'
-            : 'w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-700/50'
+            : 'w-12 h-12 rounded-xl'
         }`}>
           <img
             src={getEffectiveIcon(link)}
@@ -1907,11 +1907,13 @@ function App() {
             ? 'bg-green-20 dark:bg-green-900/30 border-green-200 dark:border-green-800'
             : isUnassignedHighlight
               ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800/50 hover:bg-amber-100 dark:hover:bg-amber-900/30'
-              : 'bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-slate-200 dark:border-slate-700'
-        } ${isDragging ? 'shadow-2xl scale-105' : 'hover:shadow-lg hover:shadow-blue-100/50 dark:hover:shadow-blue-900/20'} active:cursor-grabbing ${
+              : isDetailedView
+                ? 'bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-slate-200 dark:border-slate-700'
+                : 'hover:bg-slate-100/70 dark:hover:bg-white/5'
+        } ${isDragging ? 'shadow-2xl scale-105' : isDetailedView ? 'hover:shadow-lg hover:shadow-blue-100/50 dark:hover:shadow-blue-900/20' : ''} active:cursor-grabbing ${
           isDetailedView
             ? 'flex items-center rounded-xl border shadow-sm p-3 hover:-translate-y-0.5 hover:border-blue-300 dark:hover:border-blue-600'
-            : 'flex flex-col items-center justify-center text-center rounded-xl border shadow-sm p-3 hover:-translate-y-0.5 hover:border-blue-300 dark:hover:border-blue-600'
+            : 'flex flex-col items-center justify-center text-center rounded-xl p-3 hover:-translate-y-0.5'
         }`}
         onContextMenu={!isPinnedSort ? (e) => handleContextMenu(e, link) : undefined}
         {...attributes}
@@ -1969,16 +1971,18 @@ function App() {
     return (
       <div
         key={link.id}
-        className={`group relative transition-all duration-200 hover:shadow-lg hover:shadow-blue-100/50 dark:hover:shadow-blue-900/20 ${
+        className={`group relative transition-all duration-200 ${isDetailedView ? 'hover:shadow-lg hover:shadow-blue-100/50 dark:hover:shadow-blue-900/20' : ''} ${
           isSelected 
             ? 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800' 
             : isUnassignedHighlight
               ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800/50 hover:bg-amber-100 dark:hover:bg-amber-900/30'
-              : 'bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-slate-200 dark:border-slate-700'
+              : isDetailedView
+                ? 'bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-slate-200 dark:border-slate-700'
+                : 'hover:bg-slate-100/70 dark:hover:bg-white/5'
         } ${isBatchEditMode ? 'cursor-pointer' : ''} ${
           isDetailedView
             ? 'flex items-center rounded-xl border shadow-sm p-3 hover:-translate-y-0.5 hover:border-blue-300 dark:hover:border-blue-600'
-            : 'flex flex-col items-center justify-center text-center rounded-xl border shadow-sm p-3 hover:-translate-y-0.5 hover:border-blue-300 dark:hover:border-blue-600'
+            : 'flex flex-col items-center justify-center text-center rounded-xl p-3 hover:-translate-y-0.5'
         }`}
         onClick={() => isBatchEditMode && toggleLinkSelection(link.id)}
         onContextMenu={(e) => handleContextMenu(e, link)}
@@ -1990,7 +1994,7 @@ function App() {
             <div className={`flex items-center justify-center shrink-0 overflow-hidden ${
               isDetailedView
                 ? 'w-11 h-11 rounded-xl bg-slate-50 dark:bg-slate-700/50'
-                : 'w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-700/50'
+                : 'w-12 h-12 rounded-xl'
             }`}>
               <img
                 src={getEffectiveIcon(link)}
@@ -2028,7 +2032,7 @@ function App() {
             <div className={`flex items-center justify-center shrink-0 overflow-hidden ${
               isDetailedView
                 ? 'w-11 h-11 rounded-xl bg-slate-50 dark:bg-slate-700/50'
-                : 'w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-700/50'
+                : 'w-12 h-12 rounded-xl'
             }`}>
               <img
                 src={getEffectiveIcon(link)}

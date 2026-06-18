@@ -1,4 +1,3 @@
-import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { AIConfig } from "../types";
 
 /**
@@ -7,7 +6,6 @@ import { AIConfig } from "../types";
  *   · 含版本段 /v1、/v4 等       → 追加 /chat/completions（如 deepseek /v1、智谱 /v4）
  *   · 纯域名（无版本段）         → 追加 /v1/chat/completions（如 api.openai.com）
  *   · 为空                       → 使用 OpenAI 官方默认地址
- * 修复点：原实现对纯域名会拼成 缺 /v1 的非法路径，导致 404。
  */
 const normalizeOpenAIBaseUrl = (raw: string): string => {
     const baseUrl = (raw || '').trim().replace(/\/+$/, '');
@@ -19,12 +17,12 @@ const normalizeOpenAIBaseUrl = (raw: string): string => {
 
 /**
  * 调用 OpenAI 兼容 API。
- * 失败统一返回空串（而非错误提示文字），避免上层把错误文字误当成生成内容写入描述框。
+ * 失败统一返回空串，避免上层把错误文字误当成生成内容写入描述框。
+ * API Key 仅随此请求发往用户配置的 endpoint，不经过任何第三方。
  */
 const callOpenAICompatible = async (config: AIConfig, systemPrompt: string, userPrompt: string): Promise<string> => {
     try {
         const endpoint = normalizeOpenAIBaseUrl(config.baseUrl);
-        // 模型缺省，与设置面板 placeholder 保持一致（原实现缺省为空，会触发 400）
         const model = config.model || 'gpt-3.5-turbo';
 
         const response = await fetch(endpoint, {
@@ -58,9 +56,48 @@ const callOpenAICompatible = async (config: AIConfig, systemPrompt: string, user
 };
 
 /**
- * 生成链接描述。
- * 成功返回描述文本；失败（含未配置 key、API 报错、网络异常）一律返回空串，
- * 由调用方决定如何提示用户，避免把错误文字写进描述框。
+ * 调用 Anthropic Messages API（浏览器直连）。
+ * 通过 anthropic-dangerous-direct-browser-access 头开启官方支持的浏览器跨域直连。
+ * API Key 仅随此请求发往 api.anthropic.com，不经过任何第三方/中间服务器。
+ */
+const ANTHROPIC_ENDPOINT = 'https://api.anthropic.com/v1/messages';
+const callAnthropic = async (config: AIConfig, systemPrompt: string, userPrompt: string): Promise<string> => {
+    try {
+        const model = config.model || 'claude-3-5-haiku-20241022';
+
+        const response = await fetch(ANTHROPIC_ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': config.apiKey,
+                'anthropic-version': '2023-06-01',
+                // 官方支持的浏览器直连开关；否则浏览器跨域请求会被拒绝
+                'anthropic-dangerous-direct-browser-access': 'true'
+            },
+            body: JSON.stringify({
+                model,
+                max_tokens: 120,
+                system: systemPrompt,
+                messages: [{ role: 'user', content: userPrompt }]
+            })
+        });
+
+        if (!response.ok) {
+            const errText = await response.text().catch(() => '');
+            console.error(`Anthropic API Error [${response.status}]:`, errText);
+            return "";
+        }
+
+        const data = await response.json();
+        return data.content?.[0]?.text?.trim() || "";
+    } catch (e) {
+        console.error("Anthropic Call Failed", e);
+        return "";
+    }
+};
+
+/**
+ * 生成链接描述。成功返回文本；失败一律返回空串，由调用方决定如何提示。
  */
 export const generateLinkDescription = async (title: string, url: string, config: AIConfig): Promise<string> => {
   if (!config.apiKey) {
@@ -74,16 +111,12 @@ export const generateLinkDescription = async (title: string, url: string, config
   `;
 
   try {
-    if (config.provider === 'gemini') {
-        const ai = new GoogleGenAI({ apiKey: config.apiKey });
-        // Use user defined model or fallback
-        const modelName = config.model || 'gemini-2.5-flash';
-
-        const response: GenerateContentResponse = await ai.models.generateContent({
-            model: modelName,
-            contents: `I have a website bookmark. ${prompt}`,
-        });
-        return response.text ? response.text.trim() : "";
+    if (config.provider === 'anthropic') {
+        return await callAnthropic(
+            config,
+            "You are a helpful assistant that summarizes website bookmarks.",
+            prompt
+        );
     } else {
         // OpenAI 兼容
         return await callOpenAICompatible(
@@ -115,23 +148,18 @@ export const suggestCategory = async (title: string, url: string, categories: {i
     `;
 
     try {
-        if (config.provider === 'gemini') {
-            const ai = new GoogleGenAI({ apiKey: config.apiKey });
-            const modelName = config.model || 'gemini-2.5-flash';
-
-            const response: GenerateContentResponse = await ai.models.generateContent({
-                model: modelName,
-                contents: `Task: Categorize this website.\n${prompt}`,
-            });
-            return response.text ? response.text.trim() : null;
-        } else {
-            // OpenAI 兼容
-            return await callOpenAICompatible(
+        const result = config.provider === 'anthropic'
+            ? await callAnthropic(
                 config,
                 "You are an intelligent classification assistant. You only output the category ID.",
                 prompt
-            ) || null;
-        }
+            )
+            : await callOpenAICompatible(
+                config,
+                "You are an intelligent classification assistant. You only output the category ID.",
+                prompt
+            );
+        return result || null;
     } catch (e) {
         console.error(e);
         return null;

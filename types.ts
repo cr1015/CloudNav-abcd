@@ -41,7 +41,7 @@ export interface WebDavConfig {
   enabled: boolean;
 }
 
-export type AIProvider = 'gemini' | 'openai';
+export type AIProvider = 'anthropic' | 'openai';
 
 export interface AIConfig {
   provider: AIProvider;

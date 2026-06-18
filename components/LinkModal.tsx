@@ -189,8 +189,8 @@ const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, onDelete
 
         // 失败（描述与分类都为空）：给出可操作提示，而不是静默或把错误文字写进描述框
         if (!changed) {
-            alert(aiConfig.provider === 'gemini'
-                ? 'AI 生成失败。请检查 API Key 与模型是否正确；注意 Gemini API 在国内通常需要代理才能访问。'
+            alert(aiConfig.provider === 'anthropic'
+                ? 'AI 生成失败。请检查 Anthropic API Key 与模型是否正确，以及网络能否访问 api.anthropic.com。'
                 : 'AI 生成失败。请检查 API Key、Base URL、模型是否正确，以及网络能否访问该 API。');
         }
     } catch (e) {
