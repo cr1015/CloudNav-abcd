@@ -1246,14 +1246,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <p className="text-xs text-slate-500 mt-1">Key 仅存储在本地浏览器缓存中，不会发送到我们的服务器。</p>
                         </div>
 
-                        {localConfig.provider === 'openai' && (
+                        {(localConfig.provider === 'openai' || localConfig.provider === 'anthropic') && (
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Base URL (API 地址)</label>
                                 <input 
                                     type="text" 
                                     value={localConfig.baseUrl}
                                     onChange={(e) => handleChange('baseUrl', e.target.value)}
-                                    placeholder="https://api.openai.com/v1"
+                                    placeholder={localConfig.provider === 'anthropic' ? "https://api.anthropic.com（留空走官方，或填第三方中转地址）" : "https://api.openai.com/v1"}
                                     className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
                                 />
                             </div>

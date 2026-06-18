@@ -60,12 +60,27 @@ const callOpenAICompatible = async (config: AIConfig, systemPrompt: string, user
  * 通过 anthropic-dangerous-direct-browser-access 头开启官方支持的浏览器跨域直连。
  * API Key 仅随此请求发往 api.anthropic.com，不经过任何第三方/中间服务器。
  */
-const ANTHROPIC_ENDPOINT = 'https://api.anthropic.com/v1/messages';
+/**
+ * 规范化 Anthropic 兼容接口的请求地址（支持第三方中转 / 自定义 Base URL）：
+ *   · 为空                → 官方 https://api.anthropic.com/v1/messages
+ *   · 已含 /v1/messages   → 原样使用
+ *   · 含版本段 /v1 等      → 追加 /messages
+ *   · 纯域名              → 追加 /v1/messages
+ */
+const normalizeAnthropicBaseUrl = (raw: string): string => {
+    const baseUrl = (raw || '').trim().replace(/\/+$/, '');
+    if (!baseUrl) return 'https://api.anthropic.com/v1/messages';
+    if (/\/v1\/messages$/.test(baseUrl)) return baseUrl;
+    if (/\/v\d+(?=\/?$)/.test(baseUrl)) return baseUrl + '/messages';
+    return baseUrl + '/v1/messages';
+};
+
 const callAnthropic = async (config: AIConfig, systemPrompt: string, userPrompt: string): Promise<string> => {
     try {
+        const endpoint = normalizeAnthropicBaseUrl(config.baseUrl);
         const model = config.model || 'claude-3-5-haiku-20241022';
 
-        const response = await fetch(ANTHROPIC_ENDPOINT, {
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -84,7 +99,7 @@ const callAnthropic = async (config: AIConfig, systemPrompt: string, userPrompt:
 
         if (!response.ok) {
             const errText = await response.text().catch(() => '');
-            console.error(`Anthropic API Error [${response.status}]:`, errText);
+            console.error(`Anthropic API Error [${response.status}] ${endpoint}:`, errText);
             return "";
         }
 
