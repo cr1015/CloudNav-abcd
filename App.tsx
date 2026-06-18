@@ -1870,20 +1870,22 @@ function App() {
         <div className={`flex items-center justify-center shrink-0 overflow-hidden ${
           isDetailedView
             ? 'w-11 h-11 rounded-xl bg-slate-50 dark:bg-slate-700/50'
-            : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700'
+            : 'w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-700/50'
         }`}>
           <img
             src={getEffectiveIcon(link)}
             alt=""
             onError={(e) => { if (!e.currentTarget.src.startsWith('data:')) e.currentTarget.src = makeFallbackIcon(link.title); }}
-            className={`${isDetailedView ? 'w-7 h-7' : 'w-5 h-5'} object-contain`}
+            className={`${isDetailedView ? 'w-7 h-7' : 'w-9 h-9'} object-contain`}
           />
         </div>
 
         {/* 标题与描述 */}
-        <div className="flex flex-col min-w-0 flex-1">
-          <h3 className={`truncate overflow-hidden text-ellipsis ${
-            isDetailedView ? 'text-sm font-semibold text-slate-900 dark:text-slate-100' : 'text-sm font-medium text-slate-800 dark:text-slate-200'
+        <div className={`min-w-0 ${isDetailedView ? 'flex flex-col flex-1' : 'w-full flex flex-col items-center text-center'}`}>
+          <h3 className={`${
+            isDetailedView
+              ? 'truncate overflow-hidden text-ellipsis text-sm font-semibold text-slate-900 dark:text-slate-100'
+              : 'text-xs font-medium text-slate-800 dark:text-slate-200 leading-tight line-clamp-2'
           }`} title={link.title}>
             {link.title}
           </h3>
@@ -1909,7 +1911,7 @@ function App() {
         } ${isDragging ? 'shadow-2xl scale-105' : 'hover:shadow-lg hover:shadow-blue-100/50 dark:hover:shadow-blue-900/20'} active:cursor-grabbing ${
           isDetailedView
             ? 'flex items-center rounded-xl border shadow-sm p-3 hover:-translate-y-0.5 hover:border-blue-300 dark:hover:border-blue-600'
-            : 'flex items-center rounded-xl border shadow-sm p-3 hover:border-blue-300 dark:hover:border-blue-600'
+            : 'flex flex-col items-center justify-center text-center rounded-xl border shadow-sm p-3 hover:-translate-y-0.5 hover:border-blue-300 dark:hover:border-blue-600'
         }`}
         onContextMenu={!isPinnedSort ? (e) => handleContextMenu(e, link) : undefined}
         {...attributes}
@@ -1927,7 +1929,7 @@ function App() {
               href={link.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex flex-1 min-w-0 overflow-hidden h-full items-center gap-3"
+              className={`flex flex-1 min-w-0 overflow-hidden h-full ${isDetailedView ? 'flex-row items-center gap-3' : 'flex-col items-center justify-center text-center gap-2'}`}
               title={isDetailedView ? link.url : (link.description || link.url)}
             >
               {cardContent}
@@ -1976,32 +1978,34 @@ function App() {
         } ${isBatchEditMode ? 'cursor-pointer' : ''} ${
           isDetailedView
             ? 'flex items-center rounded-xl border shadow-sm p-3 hover:-translate-y-0.5 hover:border-blue-300 dark:hover:border-blue-600'
-            : 'flex items-center justify-between rounded-xl border shadow-sm p-3 hover:border-blue-300 dark:hover:border-blue-600'
+            : 'flex flex-col items-center justify-center text-center rounded-xl border shadow-sm p-3 hover:-translate-y-0.5 hover:border-blue-300 dark:hover:border-blue-600'
         }`}
         onClick={() => isBatchEditMode && toggleLinkSelection(link.id)}
         onContextMenu={(e) => handleContextMenu(e, link)}
       >
         {/* 链接内容 - 在批量编辑模式下不使用a标签 */}
         {isBatchEditMode ? (
-          <div className="flex flex-1 min-w-0 overflow-hidden h-full items-center gap-3">
+          <div className={`flex flex-1 min-w-0 overflow-hidden h-full ${isDetailedView ? 'flex-row items-center gap-3' : 'flex-col items-center justify-center text-center gap-2'}`}>
             {/* Icon - 高清大图标，贴合卡片 */}
             <div className={`flex items-center justify-center shrink-0 overflow-hidden ${
               isDetailedView
                 ? 'w-11 h-11 rounded-xl bg-slate-50 dark:bg-slate-700/50'
-                : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700'
+                : 'w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-700/50'
             }`}>
               <img
                 src={getEffectiveIcon(link)}
                 alt=""
                 onError={(e) => { if (!e.currentTarget.src.startsWith('data:')) e.currentTarget.src = makeFallbackIcon(link.title); }}
-                className={`${isDetailedView ? 'w-7 h-7' : 'w-5 h-5'} object-contain`}
+                className={`${isDetailedView ? 'w-7 h-7' : 'w-9 h-9'} object-contain`}
               />
             </div>
 
             {/* 标题与描述 */}
-            <div className="flex flex-col min-w-0 flex-1">
-              <h3 className={`truncate overflow-hidden text-ellipsis ${
-                isDetailedView ? 'text-sm font-semibold text-slate-900 dark:text-slate-100' : 'text-sm font-medium text-slate-800 dark:text-slate-200'
+            <div className={`min-w-0 ${isDetailedView ? 'flex flex-col flex-1' : 'w-full flex flex-col items-center text-center'}`}>
+              <h3 className={`${
+                isDetailedView
+                  ? 'truncate overflow-hidden text-ellipsis text-sm font-semibold text-slate-900 dark:text-slate-100'
+                  : 'text-xs font-medium text-slate-800 dark:text-slate-200 leading-tight line-clamp-2'
               }`} title={link.title}>
                 {link.title}
               </h3>
@@ -2017,27 +2021,29 @@ function App() {
             href={link.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex flex-1 min-w-0 overflow-hidden h-full items-center gap-3"
+            className={`flex flex-1 min-w-0 overflow-hidden h-full ${isDetailedView ? 'flex-row items-center gap-3' : 'flex-col items-center justify-center text-center gap-2'}`}
             title={isDetailedView ? link.url : (link.description || link.url)} // 详情版视图只显示URL作为tooltip
           >
             {/* Icon - 高清大图标，贴合卡片 */}
             <div className={`flex items-center justify-center shrink-0 overflow-hidden ${
               isDetailedView
                 ? 'w-11 h-11 rounded-xl bg-slate-50 dark:bg-slate-700/50'
-                : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700'
+                : 'w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-700/50'
             }`}>
               <img
                 src={getEffectiveIcon(link)}
                 alt=""
                 onError={(e) => { if (!e.currentTarget.src.startsWith('data:')) e.currentTarget.src = makeFallbackIcon(link.title); }}
-                className={`${isDetailedView ? 'w-7 h-7' : 'w-5 h-5'} object-contain`}
+                className={`${isDetailedView ? 'w-7 h-7' : 'w-9 h-9'} object-contain`}
               />
             </div>
 
             {/* 标题与描述 */}
-            <div className="flex flex-col min-w-0 flex-1">
-              <h3 className={`truncate whitespace-nowrap overflow-hidden text-ellipsis group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors ${
-                isDetailedView ? 'text-sm font-semibold' : 'text-sm font-medium'
+            <div className={`min-w-0 ${isDetailedView ? 'flex flex-col flex-1' : 'w-full flex flex-col items-center text-center'}`}>
+              <h3 className={`${
+                isDetailedView
+                  ? 'truncate whitespace-nowrap overflow-hidden text-ellipsis group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-sm font-semibold'
+                  : 'text-xs font-medium text-slate-800 dark:text-slate-200 leading-tight line-clamp-2'
               }`} title={link.title}>
                 {link.title}
               </h3>
@@ -2631,7 +2637,7 @@ function App() {
                                 <div className={`grid gap-3 ${
                                   siteSettings.cardStyle === 'detailed' 
                                     ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6' 
-                                    : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8'
+                                    : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
                                 }`}>
                                     {pinnedLinks.map(link => (
                                         <SortableLinkCard key={link.id} link={link} />
@@ -2643,7 +2649,7 @@ function App() {
                         <div className={`grid gap-3 ${
                           siteSettings.cardStyle === 'detailed' 
                             ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6' 
-                            : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8'
+                            : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
                         }`}>
                             {pinnedLinks.map(link => renderLinkCard(link))}
                         </div>
@@ -2849,7 +2855,7 @@ function App() {
                                 <div className={`grid gap-3 ${
                                   siteSettings.cardStyle === 'detailed' 
                                     ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6' 
-                                    : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8'
+                                    : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
                                 }`}>
                                     {displayedLinks.map(link => (
                                         <SortableLinkCard key={link.id} link={link} />
@@ -2861,7 +2867,7 @@ function App() {
                         <div className={`grid gap-3 ${
                           siteSettings.cardStyle === 'detailed' 
                             ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6' 
-                            : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8'
+                            : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
                         }`}>
                             {displayedLinks.map(link => renderLinkCard(link))}
                         </div>
@@ -2904,7 +2910,7 @@ function App() {
                         <div className={`grid gap-3 ${
                           siteSettings.cardStyle === 'detailed' 
                             ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6' 
-                            : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8'
+                            : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
                         }`}>
                           {links.map(link => renderLinkCard(link))}
                         </div>
