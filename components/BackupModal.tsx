@@ -115,7 +115,7 @@ const BackupModal: React.FC<BackupModalProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'cloudnav_backup.json';
+    a.download = 'raynav_backup.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

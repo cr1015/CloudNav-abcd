@@ -99,11 +99,17 @@ function App() {
           } catch (e) {}
       }
       return {
-          title: 'CloudNav - 我的导航',
-          navTitle: 'CloudNav',
+          title: 'RayNav',
+          navTitle: 'RayNav',
           favicon: '',
           cardStyle: 'detailed' as const,
-          passwordExpiryDays: 7
+          passwordExpiryDays: 7,
+          wallpaperType: 'none',
+          wallpaperColor: '#1e293b',
+          wallpaperImage: '',
+          wallpaperFit: 'cover',
+          wallpaperOpacity: 100,
+          wallpaperBlur: 0
       };
   });
   
@@ -599,7 +605,13 @@ function App() {
                         navTitle: websiteConfigData.navTitle || prev.navTitle,
                         favicon: websiteConfigData.favicon || prev.favicon,
                         cardStyle: websiteConfigData.cardStyle || prev.cardStyle,
-                        passwordExpiryDays: websiteConfigData.passwordExpiryDays !== undefined ? websiteConfigData.passwordExpiryDays : prev.passwordExpiryDays
+                        passwordExpiryDays: websiteConfigData.passwordExpiryDays !== undefined ? websiteConfigData.passwordExpiryDays : prev.passwordExpiryDays,
+                        wallpaperType: websiteConfigData.wallpaperType || prev.wallpaperType || 'none',
+                        wallpaperColor: websiteConfigData.wallpaperColor || prev.wallpaperColor || '#1e293b',
+                        wallpaperImage: websiteConfigData.wallpaperImage || prev.wallpaperImage || '',
+                        wallpaperFit: websiteConfigData.wallpaperFit || prev.wallpaperFit || 'cover',
+                        wallpaperOpacity: websiteConfigData.wallpaperOpacity !== undefined ? websiteConfigData.wallpaperOpacity : (prev.wallpaperOpacity ?? 100),
+                        wallpaperBlur: websiteConfigData.wallpaperBlur !== undefined ? websiteConfigData.wallpaperBlur : (prev.wallpaperBlur ?? 0)
                     }));
                 }
             }
@@ -726,6 +738,53 @@ function App() {
       document.head.appendChild(favicon);
     }
   }, [siteSettings.title, siteSettings.favicon]);
+
+  // 应用壁纸背景到 body
+  useEffect(() => {
+    const type = siteSettings.wallpaperType || 'none';
+    const opacity = siteSettings.wallpaperOpacity ?? 100;
+    const blur = siteSettings.wallpaperBlur ?? 0;
+    const fit = siteSettings.wallpaperFit || 'cover';
+    const body = document.body;
+
+    // 清理自定义背景层
+    const existing = document.getElementById('cloudnav-wallpaper-layer');
+    if (existing) existing.remove();
+    body.style.background = '';
+    body.style.backgroundColor = '';
+
+    if (type === 'color') {
+      body.style.backgroundColor = siteSettings.wallpaperColor || '#1e293b';
+    } else if (type === 'image' && siteSettings.wallpaperImage) {
+      // 用固定层承载图片，便于控制 opacity / blur / 适配方式，且不干扰内容滚动
+      const layer = document.createElement('div');
+      layer.id = 'cloudnav-wallpaper-layer';
+      layer.style.position = 'fixed';
+      layer.style.inset = '0';
+      layer.style.zIndex = '-1';
+      layer.style.backgroundImage = `url("${siteSettings.wallpaperImage}")`;
+      layer.style.backgroundRepeat = fit === 'repeat' ? 'repeat' : 'no-repeat';
+      layer.style.backgroundSize =
+        fit === 'repeat' ? 'auto' :
+        fit === 'fill' ? '100% 100%' :
+        fit; // cover / contain
+      layer.style.backgroundPosition = 'center';
+      layer.style.opacity = String(Math.max(0, Math.min(100, opacity)) / 100);
+      if (blur > 0) layer.style.filter = `blur(${blur}px)`;
+      // 模糊会露出边缘，放大一点避免透出
+      if (blur > 0) {
+        layer.style.transform = 'scale(1.05)';
+      }
+      document.body.appendChild(layer);
+    }
+  }, [
+    siteSettings.wallpaperType,
+    siteSettings.wallpaperColor,
+    siteSettings.wallpaperImage,
+    siteSettings.wallpaperFit,
+    siteSettings.wallpaperOpacity,
+    siteSettings.wallpaperBlur
+  ]);
 
   const toggleTheme = () => {
     const newMode = !darkMode;
@@ -2191,7 +2250,7 @@ function App() {
         {/* Logo */}
         <div className="h-16 flex items-center px-6 border-b border-slate-100 dark:border-slate-700 shrink-0">
             <span className="text-xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-              {siteSettings.navTitle || 'CloudNav'}
+              {siteSettings.navTitle || 'RayNav'}
             </span>
         </div>
 

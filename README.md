@@ -120,7 +120,7 @@
 
 ---
 
-# CloudNav (云航) - 智能私有导航站
+# RayNav - 智能私有导航站
 
 <div align="center">
 
@@ -172,7 +172,7 @@
 
 ## 📸 项目展示
 
-> 以下为 CloudNav 的实际运行界面预览。
+> 以下为 RayNav 的实际运行界面预览。
 
 ### 🖥️ 桌面端概览
 | 浅色模式 (Light Mode) | 深色模式 (Dark Mode) |
@@ -283,12 +283,12 @@
 ### 4. 本地数据导出 (Local Data Export)
 点击侧边栏的 **“备份”** 图标 -> **“导出 HTML”**。
 *   生成的 HTML 文件完全兼容 **Chrome**、**Edge**、**Firefox** 等主流浏览器的导入格式。
-*   完整保留您在云航中整理的分类目录结构。
+*   完整保留您在 RayNav 中整理的分类目录结构。
 
 **如何导入到浏览器 (以 Chrome 为例):**
 1. 打开 Chrome 浏览器，点击右上角菜单 -> **书签与清单** -> **书签管理器**。
 2. 点击页面右上角的三个点图标 -> **导入书签**。
-3. 选择刚才从云航下载的 HTML 文件即可恢复所有书签。
+3. 选择刚才从 RayNav 下载的 HTML 文件即可恢复所有书签。
 
 </details>
 
@@ -302,5 +302,5 @@
 
 <br/>
 
-Made with ❤️ by CloudNav Team
+Made with ❤️ by RayNav Team
 </div>

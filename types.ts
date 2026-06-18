@@ -19,12 +19,23 @@ export interface Category {
   parentId?: string; // ID of the parent category if this is a sub-category
 }
 
+export type WallpaperType = 'none' | 'color' | 'image';
+// 适配方式：cover 裁剪填充 | contain 完整显示 | repeat 平铺 | fill 拉伸
+export type WallpaperFit = 'cover' | 'contain' | 'repeat' | 'fill';
+
 export interface SiteSettings {
   title: string;
   navTitle: string;
   favicon: string;
   cardStyle: 'detailed' | 'simple';
   passwordExpiryDays: number; // 密码过期天数，0表示永久不退出
+  // 壁纸设置
+  wallpaperType: WallpaperType; // none=默认 | color=纯色 | image=图片
+  wallpaperColor: string; // 纯色背景色（hex）
+  wallpaperImage: string; // 上传图片的 data URI
+  wallpaperFit: WallpaperFit; // 缩放/裁剪适配方式
+  wallpaperOpacity: number; // 背景不透明度 0-100
+  wallpaperBlur: number; // 背景模糊 px（仅图片有效）
 }
 
 export interface AppState {

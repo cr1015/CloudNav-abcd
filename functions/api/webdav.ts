@@ -13,7 +13,7 @@ export const onRequestPost = async (context: { request: Request }) => {
     let baseUrl = config.url.trim();
     if (!baseUrl.endsWith('/')) baseUrl += '/';
     
-    const finalFilename = filename || 'cloudnav_backup.json';
+    const finalFilename = filename || 'raynav_backup.json';
     const fileUrl = baseUrl + finalFilename;
 
     const authHeader = `Basic ${btoa(`${config.username}:${config.password}`)}`;
@@ -22,7 +22,7 @@ export const onRequestPost = async (context: { request: Request }) => {
     let method = 'PROPFIND';
     let headers: Record<string, string> = {
         'Authorization': authHeader,
-        'User-Agent': 'CloudNav/1.0'
+        'User-Agent': 'RayNav/1.0'
     };
     let requestBody = undefined;
 

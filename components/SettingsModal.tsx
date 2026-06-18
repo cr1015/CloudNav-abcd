@@ -28,10 +28,10 @@ const generateSvgIcon = (text: string, color1: string, color2: string) => {
     if (text && text.length > 0) {
         char = text.charAt(0);
         if (/^[a-zA-Z]$/.test(char)) {
-            char = '云';
+            char = 'R';
         }
     } else {
-        char = '云';
+        char = 'R';
     }
     
     const gradientId = 'g_' + Math.random().toString(36).substr(2, 9);
@@ -64,11 +64,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const [localConfig, setLocalConfig] = useState<AIConfig>(config);
   
   const [localSiteSettings, setLocalSiteSettings] = useState<SiteSettings>(() => ({
-      title: siteSettings?.title || 'CloudNav - 我的导航',
-      navTitle: siteSettings?.navTitle || 'CloudNav',
+      title: siteSettings?.title || 'RayNav',
+      navTitle: siteSettings?.navTitle || 'RayNav',
       favicon: siteSettings?.favicon || '',
       cardStyle: siteSettings?.cardStyle || 'detailed',
-      passwordExpiryDays: siteSettings?.passwordExpiryDays ?? 7
+      passwordExpiryDays: siteSettings?.passwordExpiryDays ?? 7,
+      wallpaperType: siteSettings?.wallpaperType || 'none',
+      wallpaperColor: siteSettings?.wallpaperColor || '#1e293b',
+      wallpaperImage: siteSettings?.wallpaperImage || '',
+      wallpaperFit: siteSettings?.wallpaperFit || 'cover',
+      wallpaperOpacity: siteSettings?.wallpaperOpacity ?? 100,
+      wallpaperBlur: siteSettings?.wallpaperBlur ?? 0
   }));
   
   const [generatedIcons, setGeneratedIcons] = useState<string[]>([]);
@@ -100,10 +106,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     if (isOpen) {
       setLocalConfig(config);
       const safeSettings = {
-          title: siteSettings?.title || 'CloudNav - 我的导航',
-          navTitle: siteSettings?.navTitle || 'CloudNav',
+          title: siteSettings?.title || 'RayNav',
+          navTitle: siteSettings?.navTitle || 'RayNav',
           favicon: siteSettings?.favicon || '',
-          cardStyle: siteSettings?.cardStyle || 'detailed'
+          cardStyle: siteSettings?.cardStyle || 'detailed',
+          passwordExpiryDays: siteSettings?.passwordExpiryDays ?? 7,
+          wallpaperType: siteSettings?.wallpaperType || 'none',
+          wallpaperColor: siteSettings?.wallpaperColor || '#1e293b',
+          wallpaperImage: siteSettings?.wallpaperImage || '',
+          wallpaperFit: siteSettings?.wallpaperFit || 'cover',
+          wallpaperOpacity: siteSettings?.wallpaperOpacity ?? 100,
+          wallpaperBlur: siteSettings?.wallpaperBlur ?? 0
       };
       setLocalSiteSettings(safeSettings);
       if (generatedIcons.length === 0) {
@@ -308,10 +321,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const getManifestJson = () => {
     const json: any = {
         manifest_version: 3,
-        name: (localSiteSettings.navTitle || "CloudNav") + " Pro",
+        name: (localSiteSettings.navTitle || "RayNav") + " Pro",
         version: "7.6",
         minimum_chrome_version: "116",
-        description: "CloudNav - 极速侧边栏与智能收藏",
+        description: "RayNav - 极速侧边栏与智能收藏",
         permissions: ["activeTab", "scripting", "sidePanel", "storage", "favicon", "contextMenus", "notifications", "tabs"],
         background: {
             service_worker: "background.js"
@@ -331,7 +344,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               "default": "Ctrl+Shift+E",
               "mac": "Command+Shift+E"
             },
-            "description": "打开/关闭 CloudNav 侧边栏"
+            "description": "打开/关闭 RayNav 侧边栏"
           }
         }
     };
@@ -348,7 +361,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     return JSON.stringify(json, null, 2);
   };
 
-  const extBackgroundJs = `// background.js - CloudNav Assistant v7.6
+  const extBackgroundJs = `// background.js - RayNav Assistant v7.6
 const CONFIG = {
   apiBase: "${domain}",
   password: "${password}"
@@ -417,7 +430,7 @@ function buildMenus() {
     chrome.contextMenus.removeAll(() => {
         chrome.contextMenus.create({
             id: "cloudnav_root",
-            title: "⚡ 保存到 CloudNav",
+            title: "⚡ 保存到 RayNav",
             contexts: ["page", "link", "action"]
         });
 
@@ -485,7 +498,7 @@ function updateMenuTitle(url) {
     if (!url) return;
     const cleanUrl = url.replace(/\\/$/, '').toLowerCase();
     const exists = linkCache.some(l => l.url && l.url.replace(/\\/$/, '').toLowerCase() === cleanUrl);
-    const newTitle = exists ? "⚠️ 已存在 - 保存到 CloudNav" : "⚡ 保存到 CloudNav";
+    const newTitle = exists ? "⚠️ 已存在 - 保存到 RayNav" : "⚡ 保存到 RayNav";
     chrome.contextMenus.update("cloudnav_root", { title: newTitle }, () => {
         if (chrome.runtime.lastError) { }
     });
@@ -544,7 +557,7 @@ async function saveLink(title, url, categoryId, icon = '') {
         });
 
         if (res.ok) {
-            notify('保存成功', \`已保存到 CloudNav\`);
+            notify('保存成功', \`已保存到 RayNav\`);
             chrome.runtime.sendMessage({ type: 'refresh' }).catch(() => {});
             const newLink = { id: Date.now().toString(), title, url, categoryId, icon };
             linkCache.unshift(newLink);
@@ -1088,7 +1101,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const url = window.URL.createObjectURL(content);
         const a = document.createElement('a');
         a.href = url;
-        a.download = "CloudNav-Ext.zip";
+        a.download = "RayNav-Ext.zip";
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -1200,11 +1213,149 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     </div>
                                 </div>
                             </div>
+                            {/* 壁纸设置 */}
+                            <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">壁纸背景</label>
+                                {/* 类型切换 */}
+                                <div className="flex gap-2 mb-3">
+                                    {([
+                                        { v: 'none', t: '默认' },
+                                        { v: 'color', t: '纯色' },
+                                        { v: 'image', t: '图片' }
+                                    ] as const).map(opt => (
+                                        <button
+                                            key={opt.v}
+                                            type="button"
+                                            onClick={() => handleSiteChange('wallpaperType', opt.v)}
+                                            className={`flex-1 px-3 py-1.5 rounded-lg text-sm transition-colors border ${
+                                                localSiteSettings.wallpaperType === opt.v
+                                                    ? 'bg-blue-600 text-white border-blue-600'
+                                                    : 'border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                                            }`}
+                                        >
+                                            {opt.t}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* 纯色设置 */}
+                                {localSiteSettings.wallpaperType === 'color' && (
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <input
+                                            type="color"
+                                            value={localSiteSettings.wallpaperColor}
+                                            onChange={(e) => handleSiteChange('wallpaperColor', e.target.value)}
+                                            className="w-12 h-9 rounded cursor-pointer border border-slate-300 dark:border-slate-600 bg-transparent"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={localSiteSettings.wallpaperColor}
+                                            onChange={(e) => handleSiteChange('wallpaperColor', e.target.value)}
+                                            placeholder="#1e293b"
+                                            className="flex-1 p-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                                        />
+                                    </div>
+                                )}
+
+                                {/* 图片设置 */}
+                                {localSiteSettings.wallpaperType === 'image' && (
+                                    <div className="space-y-3 mb-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-20 h-14 rounded-lg bg-slate-100 dark:bg-slate-700 overflow-hidden border border-slate-200 dark:border-slate-600 flex items-center justify-center">
+                                                {localSiteSettings.wallpaperImage
+                                                    ? <img src={localSiteSettings.wallpaperImage} className="w-full h-full object-cover" />
+                                                    : <span className="text-xs text-slate-400">未上传</span>}
+                                            </div>
+                                            <label className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-sm cursor-pointer hover:bg-blue-700 transition-colors">
+                                                选择图片
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    className="hidden"
+                                                    onChange={(e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (!file) return;
+                                                        // 限制 4MB，避免 localStorage / KV 溢出
+                                                        if (file.size > 4 * 1024 * 1024) {
+                                                            alert('图片过大（>4MB），请压缩后再上传。');
+                                                            e.target.value = '';
+                                                            return;
+                                                        }
+                                                        const reader = new FileReader();
+                                                        reader.onload = () => {
+                                                            handleSiteChange('wallpaperImage', String(reader.result || ''));
+                                                        };
+                                                        reader.onerror = () => alert('图片读取失败，请更换图片。');
+                                                        reader.readAsDataURL(file);
+                                                    }}
+                                                />
+                                            </label>
+                                            {localSiteSettings.wallpaperImage && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleSiteChange('wallpaperImage', '')}
+                                                    className="text-sm text-red-500 hover:text-red-600"
+                                                >移除</button>
+                                            )}
+                                        </div>
+
+                                        {/* 适配方式 */}
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-500 mb-1">适配方式</label>
+                                            <select
+                                                value={localSiteSettings.wallpaperFit}
+                                                onChange={(e) => handleSiteChange('wallpaperFit', e.target.value)}
+                                                className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                            >
+                                                <option value="cover">裁剪填充（铺满屏幕，可能裁切）</option>
+                                                <option value="contain">完整显示（不裁切，可能留白）</option>
+                                                <option value="fill">拉伸填充（铺满，可能变形）</option>
+                                                <option value="repeat">平铺（小图重复）</option>
+                                            </select>
+                                        </div>
+
+                                        {/* 不透明度 */}
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-500 mb-1">
+                                                不透明度：{localSiteSettings.wallpaperOpacity}%
+                                            </label>
+                                            <input
+                                                type="range"
+                                                min="10"
+                                                max="100"
+                                                value={localSiteSettings.wallpaperOpacity}
+                                                onChange={(e) => handleSiteChange('wallpaperOpacity', parseInt(e.target.value))}
+                                                className="w-full"
+                                            />
+                                        </div>
+
+                                        {/* 模糊 */}
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-500 mb-1">
+                                                背景模糊：{localSiteSettings.wallpaperBlur}px
+                                            </label>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="20"
+                                                value={localSiteSettings.wallpaperBlur}
+                                                onChange={(e) => handleSiteChange('wallpaperBlur', parseInt(e.target.value))}
+                                                className="w-full"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {localSiteSettings.wallpaperType === 'none' && (
+                                    <p className="text-xs text-slate-500">使用页面默认背景。选择「纯色」或「图片」自定义壁纸。</p>
+                                )}
+                            </div>
+
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">身份验证过期天数</label>
                                 <div className="relative">
-                                    <input 
-                                        type="number" 
+                                    <input
+                                        type="number"
                                         min="0"
                                         value={localSiteSettings.passwordExpiryDays}
                                         onChange={(e) => handleSiteChange('passwordExpiryDays', parseInt(e.target.value) || 0)}
@@ -1380,7 +1531,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     安装指南 ({browserType === 'chrome' ? 'Chrome/Edge' : 'Firefox'}):
                                 </h5>
                                 <ol className="list-decimal list-inside text-sm text-slate-600 dark:text-slate-400 space-y-2 leading-relaxed">
-                                    <li>在电脑上新建文件夹 <code className="bg-white dark:bg-slate-900 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-mono text-xs">CloudNav-Pro</code>。</li>
+                                    <li>在电脑上新建文件夹 <code className="bg-white dark:bg-slate-900 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-mono text-xs">RayNav-Pro</code>。</li>
                                     <li><strong>[重要]</strong> 将下方图标保存为 <code className="bg-white dark:bg-slate-900 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-mono text-xs">icon.png</code>。</li>
                                     <li>获取插件代码文件：
                                         <ul className="list-disc list-inside ml-4 mt-1 space-y-1 text-slate-500">
@@ -1400,7 +1551,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     <li>1. 开启右上角的 "开发者模式" (Chrome)。</li>
                                     <li>2. 点击 "加载已解压的扩展程序"，选择包含上述文件的文件夹。</li>
                                     <li>3. 前往 <code className="select-all bg-white dark:bg-slate-900 px-1 rounded">chrome://extensions/shortcuts</code>。</li>
-                                    <li>4. <strong>[重要]</strong> 找到 "打开/关闭 CloudNav 侧边栏"，设置快捷键 (如 Ctrl+Shift+E)。</li>
+                                    <li>4. <strong>[重要]</strong> 找到 "打开/关闭 RayNav 侧边栏"，设置快捷键 (如 Ctrl+Shift+E)。</li>
                                 </ol>
                                 
                                 <div className="mt-4 mb-4">
