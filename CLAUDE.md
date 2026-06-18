@@ -129,6 +129,7 @@ npm run preview  # 预览构建结果
 - `SiteSettings` 新增壁纸字段：`wallpaperType`(`none`/`color`/`image`)、`wallpaperColor`(hex)、`wallpaperImage`(上传图片 data URI)、`wallpaperFit`(`cover`裁剪填充/`contain`完整显示/`fill`拉伸/`repeat`平铺)、`wallpaperOpacity`(10–100%)、`wallpaperBlur`(0–20px)
 - `SettingsModal.tsx`「网站设置」Tab：壁纸块位于 favicon 与身份验证过期天数之间，提供纯色取色器 + hex 输入、图片上传（`FileReader`→data URI，限 4MB）、适配方式下拉、不透明度/模糊滑杆；保存后随 `siteSettings` 写入 localStorage 与 KV（`saveConfig=website`）
 - `App.tsx` 通过 `useEffect` 把壁纸渲染到一个 `position:fixed;z-index:-1` 的固定背景层（`#cloudnav-wallpaper-layer`），不干扰内容滚动；纯色直接设 `document.body` 背景色，图片按 `wallpaperFit` 设置 `background-size`/`repeat`，模糊时 `scale(1.05)` 避免透边
+- **关键：主内容区 `<main>` 必须在启用壁纸时背景透明**，否则其 `bg-slate-50 dark:bg-slate-900` 不透明背景会盖住 body 上的壁纸层（纯色与图片均会失效）。当前实现按 `siteSettings.wallpaperType && wallpaperType !== 'none'` 条件去掉 main 背景；`wallpaperType='none'` 时保留原 `bg-slate-50` 兜底。侧边栏 `<aside>` 面板背景（`bg-white/dark:bg-slate-800`）刻意保留以保证可读性
 - 默认 `wallpaperType='none'` 使用页面原背景；旧数据缺字段时各处均有默认值兜底
 
 ### AI 配置与 Key 安全（设置 → AI）
