@@ -185,11 +185,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         const link = links[i];
         try {
             const desc = await generateLinkDescription(link.title, link.url, localConfig);
-            currentLinks = currentLinks.map(l => l.id === link.id ? { ...l, description: desc } : l);
+            // 失败（返回空串）时保留原描述，避免被误清空
+            currentLinks = currentLinks.map(l => l.id === link.id ? { ...l, description: desc || l.description } : l);
         } catch (e) {
             console.error(`Failed to generate for ${link.title}`, e);
-            // 生成失败时清空描述
-            currentLinks = currentLinks.map(l => l.id === link.id ? { ...l, description: '' } : l);
+            // 生成异常时保留原描述
         }
         onUpdateLinks(currentLinks);
         setProgress({ current: i + 1, total: links.length });

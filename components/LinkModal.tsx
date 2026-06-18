@@ -175,19 +175,27 @@ const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, onDelete
     }
 
     setIsGenerating(true);
-    
-    // Parallel execution for speed
+
+    // 并行执行：描述生成 + 分类推荐
     try {
         const descPromise = generateLinkDescription(title, url, aiConfig);
         const catPromise = suggestCategory(title, url, categories, aiConfig);
-        
+
         const [desc, cat] = await Promise.all([descPromise, catPromise]);
-        
-        if (desc) setDescription(desc);
-        if (cat) setCategoryId(cat);
-        
+
+        let changed = false;
+        if (desc) { setDescription(desc); changed = true; }
+        if (cat)  { setCategoryId(cat);  changed = true; }
+
+        // 失败（描述与分类都为空）：给出可操作提示，而不是静默或把错误文字写进描述框
+        if (!changed) {
+            alert(aiConfig.provider === 'gemini'
+                ? 'AI 生成失败。请检查 API Key 与模型是否正确；注意 Gemini API 在国内通常需要代理才能访问。'
+                : 'AI 生成失败。请检查 API Key、Base URL、模型是否正确，以及网络能否访问该 API。');
+        }
     } catch (e) {
         console.error("AI Assist failed", e);
+        alert('AI 生成出错，请查看浏览器控制台或检查网络 / API 配置。');
     } finally {
         setIsGenerating(false);
     }

@@ -2,32 +2,39 @@ import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { AIConfig } from "../types";
 
 /**
- * Helper to call OpenAI Compatible API
+ * 规范化 OpenAI 兼容接口的请求地址，兼容用户填写的多种形式：
+ *   · 已含 /chat/completions    → 原样使用
+ *   · 含版本段 /v1、/v4 等       → 追加 /chat/completions（如 deepseek /v1、智谱 /v4）
+ *   · 纯域名（无版本段）         → 追加 /v1/chat/completions（如 api.openai.com）
+ *   · 为空                       → 使用 OpenAI 官方默认地址
+ * 修复点：原实现对纯域名会拼成 缺 /v1 的非法路径，导致 404。
+ */
+const normalizeOpenAIBaseUrl = (raw: string): string => {
+    const baseUrl = (raw || '').trim().replace(/\/+$/, '');
+    if (!baseUrl) return 'https://api.openai.com/v1/chat/completions';
+    if (/\/chat\/completions$/.test(baseUrl)) return baseUrl;
+    if (/\/v\d+(?=\/?$)/.test(baseUrl)) return baseUrl + '/chat/completions';
+    return baseUrl + '/v1/chat/completions';
+};
+
+/**
+ * 调用 OpenAI 兼容 API。
+ * 失败统一返回空串（而非错误提示文字），避免上层把错误文字误当成生成内容写入描述框。
  */
 const callOpenAICompatible = async (config: AIConfig, systemPrompt: string, userPrompt: string): Promise<string> => {
     try {
-        let baseUrl = config.baseUrl.replace(/\/$/, '');
-        // If user didn't provide full path, assume /v1/chat/completions logic or just trust them
-        // Common convention: if URL ends with /v1, append /chat/completions
-        if (!baseUrl.includes('/chat/completions')) {
-            if (baseUrl.endsWith('/v1')) {
-                baseUrl += '/chat/completions';
-            } else {
-                // If it's just a domain like api.openai.com, usually implies /v1/chat/completions
-                // But let's assume user might input full path or standard base. 
-                // To be safe, let's append /chat/completions if not present
-                baseUrl += '/chat/completions';
-            }
-        }
+        const endpoint = normalizeOpenAIBaseUrl(config.baseUrl);
+        // 模型缺省，与设置面板 placeholder 保持一致（原实现缺省为空，会触发 400）
+        const model = config.model || 'gpt-3.5-turbo';
 
-        const response = await fetch(baseUrl, {
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${config.apiKey}`
             },
             body: JSON.stringify({
-                model: config.model,
+                model,
                 messages: [
                     { role: "system", content: systemPrompt },
                     { role: "user", content: userPrompt }
@@ -37,8 +44,8 @@ const callOpenAICompatible = async (config: AIConfig, systemPrompt: string, user
         });
 
         if (!response.ok) {
-            const err = await response.text();
-            console.error("OpenAI API Error:", err);
+            const errText = await response.text().catch(() => '');
+            console.error(`OpenAI API Error [${response.status}] ${endpoint}:`, errText);
             return "";
         }
 
@@ -51,7 +58,9 @@ const callOpenAICompatible = async (config: AIConfig, systemPrompt: string, user
 };
 
 /**
- * Uses configured AI to generate a description
+ * 生成链接描述。
+ * 成功返回描述文本；失败（含未配置 key、API 报错、网络异常）一律返回空串，
+ * 由调用方决定如何提示用户，避免把错误文字写进描述框。
  */
 export const generateLinkDescription = async (title: string, url: string, config: AIConfig): Promise<string> => {
   if (!config.apiKey) {
@@ -76,13 +85,12 @@ export const generateLinkDescription = async (title: string, url: string, config
         });
         return response.text ? response.text.trim() : "";
     } else {
-        // OpenAI Compatible
-        const result = await callOpenAICompatible(
+        // OpenAI 兼容
+        return await callOpenAICompatible(
             config,
             "You are a helpful assistant that summarizes website bookmarks.",
             prompt
         );
-        return result || "";
     }
   } catch (error) {
     console.error("AI generation error:", error);
@@ -91,7 +99,7 @@ export const generateLinkDescription = async (title: string, url: string, config
 };
 
 /**
- * Suggests a category
+ * 推荐分类。成功返回分类 id，失败返回 null。
  */
 export const suggestCategory = async (title: string, url: string, categories: {id: string, name: string}[], config: AIConfig): Promise<string | null> => {
     if (!config.apiKey) return null;
@@ -110,20 +118,19 @@ export const suggestCategory = async (title: string, url: string, categories: {i
         if (config.provider === 'gemini') {
             const ai = new GoogleGenAI({ apiKey: config.apiKey });
             const modelName = config.model || 'gemini-2.5-flash';
-            
+
             const response: GenerateContentResponse = await ai.models.generateContent({
                 model: modelName,
                 contents: `Task: Categorize this website.\n${prompt}`,
             });
             return response.text ? response.text.trim() : null;
         } else {
-             // OpenAI Compatible
-            const result = await callOpenAICompatible(
+            // OpenAI 兼容
+            return await callOpenAICompatible(
                 config,
                 "You are an intelligent classification assistant. You only output the category ID.",
                 prompt
-            );
-            return result || null;
+            ) || null;
         }
     } catch (e) {
         console.error(e);
